@@ -241,3 +241,58 @@ body{
   text-align:center;
   margin-top:20px;
 }
+/* ===== Mobile Responsive ===== */
+@media (max-width: 768px){
+
+  body{
+    padding-top:70px;
+  }
+
+  .admin-header{
+    padding:14px 16px;
+  }
+
+  .sidebar{
+    position:relative;
+    top:auto;
+    right:auto;
+    width:100%;
+    height:auto;
+    padding:16px;
+  }
+
+  .sidebar-menu{
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .sidebar-menu li{
+    flex:1 1 calc(50% - 10px);
+  }
+
+  .admin-main{
+    margin-right:0;
+    padding:16px;
+  }
+
+  .admin-cards{
+    grid-template-columns:1fr;
+  }
+
+  .reports-section{
+    margin-top:20px;
+  }
+
+  .report-card{
+    padding:14px;
+  }
+
+  .reports-box{
+    padding:16px;
+  }
+
+  .section-title{
+    font-size:18px;
+  }
+}
