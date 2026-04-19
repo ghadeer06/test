@@ -1,0 +1,280 @@
+:root{
+  --dark:#0F2F4A;
+  --mid:#5E7B93;
+  --bg:#F3F1EC;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html, body{
+  height:100%;
+}
+
+body{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  font-family:Arial, sans-serif;
+  direction:rtl;
+  background:var(--bg);
+}
+
+/* ===== Header ===== */
+.admin-header{
+  background:linear-gradient(to left, #0F2F4A, #5E7B93);
+  color:#fff;
+  padding:18px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.admin-left{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.admin-logo{
+  width:120px;
+  height:auto;
+  display:block;
+}
+
+.admin-title h1{
+  font-size:20px;
+  font-weight:900;
+  margin:0;
+}
+
+.admin-title span{
+  font-size:12px;
+  opacity:.9;
+}
+
+.logout{
+  background:#fff;
+  color:#0F2F4A;
+  padding:8px 16px;
+  text-decoration:none;
+  border-radius:8px;
+  font-weight:900;
+  transition:.2s;
+}
+
+.logout:hover{
+  background:#e0e0e0;
+}
+
+.admin-main{
+  flex:1;
+  padding:8px 40px 20px;
+}
+
+/* ===== Stats Cards ===== */
+.admin-cards{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+  margin-bottom:18px;
+}
+
+.stat-card{
+  background:#fff;
+  border-radius:12px;
+  padding:12px 14px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  border-right:4px solid #5E7B93; 
+  text-align:center;
+  height:75px; 
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  transition:.2s;
+}
+
+.stat-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 14px rgba(0,0,0,0.08);
+}
+
+.stat-card h3{
+  font-size:11px; 
+  color:#7b8a99;
+  margin-bottom:4px;
+  font-weight:700;
+}
+
+.stat-card p{
+  font-size:22px; 
+  font-weight:900;
+  color:#0F2F4A;
+  margin:0;
+}
+
+.stat-click.active{
+  outline:2px solid rgba(94,123,147,0.2);
+}
+
+@media (max-width:768px){
+  .admin-cards{
+    grid-template-columns:1fr;
+  }
+}
+/* ===== Section Title ===== */
+.reports-section{
+  margin-top:16px;
+}
+
+.section-title{
+  margin:6px 0 12px;
+  color:#0F2F4A;
+  font-weight:900;
+}
+
+/* ===== Reports Box ===== */
+.reports-box{
+  background:#fff;
+  border-radius:14px;
+  padding:12px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.05);
+  border-right:6px solid #5E7B93;
+}
+
+/* هذا أهم جزء: اللي يتحرك داخل الصندوق فقط */
+.reports-scroll{
+  max-height:320px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-left:6px;
+  scrollbar-width:thin;
+}
+
+/* ===== Report Card ===== */
+.report-card{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  background:#fff;
+  border:1px solid #e7eef7;
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:12px;
+  align-items:flex-start;
+}
+
+.report-card:last-child{
+  margin-bottom:0;
+}
+
+.report-main{
+  flex:1;
+}
+
+.report-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.report-head h3{
+  font-size:14px;
+  color:#0F2F4A;
+  font-weight:900;
+  margin:0;
+}
+
+.report-main p{
+  color:#1c2a38;
+  line-height:1.9;
+  font-size:13px;
+  margin:0;
+}
+
+.status-tag{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:900;
+  font-size:12px;
+  background:#f6f3ea;
+  border:1px solid #eadfcd;
+  color:#7a5b22;
+  white-space:nowrap;
+}
+
+.btn-process{
+  border:none;
+  padding:8px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:900;
+  font-size:12px;
+  background:#5E7B93;
+  color:#fff;
+  transition:.2s;
+  white-space:nowrap;
+}
+
+.btn-process:hover{
+  background:#0F2F4A;
+}
+
+.empty-text{
+  text-align:center;
+  padding:20px;
+  color:#777;
+}
+
+/* ===== Footer ===== */
+.main-footer{
+  background-color:#2c3e50;
+  color:#ffffff;
+  padding:20px 0;
+  text-align:center;
+}
+
+.footer-content{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+/* ===== Mobile ===== */
+@media (max-width:768px){
+  .admin-header{
+    padding:14px 16px;
+  }
+
+  .admin-main{
+    padding:18px 16px;
+  }
+
+  .admin-title h1{
+    font-size:18px;
+  }
+
+  .report-card{
+    flex-direction:column;
+  }
+
+  .report-head{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .btn-process{
+    align-self:flex-start;
+  }
+
+  .reports-scroll{
+    max-height:360px;
+  }
+}
