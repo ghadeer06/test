@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>إضافة فعالية او يوم عالمي</title>
+  <title>إضافة فعالية</title>
   <link rel="stylesheet" href="analytics.css" />
   <link rel="stylesheet" href="add_event.css" />
 </head>
@@ -14,8 +14,7 @@
   <div class="admin-left">
     <img src="img/logo.png" class="admin-logo" alt="Logo">
     <div class="admin-title">
-      <h1>إضافة فعالية او يوم عالمي</h1>
-      
+      <h1>إضافة فعالية</h1>
     </div>
   </div>
 
@@ -34,31 +33,31 @@
       <li><a href="reports.html">البلاغات</a></li>
       <li><a href="tasks.html">مهام السلامة</a></li>
       <li><a href="analytics.html">التقارير</a></li>
-      <li><a href="events.html">الفعاليات والايام العالمية</a></li>
+      <li><a href="events.html">الفعاليات</a></li>
     </ul>
   </aside>
 
   <main class="admin-main">
     <section class="event-form-box">
-      <h2>إضافة فعالية او يوم عالمي جديد</h2>
+      <h2>إضافة فعالية جديدة</h2>
 
       <div class="event-field">
-        <label for="eventTitle">عنوان الفعالية او اليوم العالمي</label>
-        <input type="text" id="eventTitle" placeholder="اكتبي عنوان الفعالية او اليوم العالمي">
+        <label for="eventTitle">عنوان الفعالية</label>
+        <input type="text" id="eventTitle" placeholder="اكتبي عنوان الفعالية">
       </div>
 
       <div class="event-field">
-        <label for="eventDesc">وصف الفعالية او اليوم العالمي</label>
-        <textarea id="eventDesc" placeholder="اكتبي وصفًا مختصرًا للفعالية او لليوم العالمي"></textarea>
+        <label for="eventDesc">وصف الفعالية</label>
+        <textarea id="eventDesc" placeholder="اكتبي وصفًا مختصرًا للفعالية"></textarea>
       </div>
 
       <div class="event-field">
-        <label for="eventDate">تاريخ اليوم</label>
+        <label for="eventDate">تاريخ الفعالية</label>
         <input type="date" id="eventDate">
       </div>
 
       <div class="event-field">
-        <label for="eventImage">صورة اليوم</label>
+        <label for="eventImage">صورة الفعالية</label>
         <input type="file" id="eventImage" accept="image/*">
       </div>
 
@@ -68,79 +67,107 @@
       </div>
 
       <div class="event-actions">
-        <button class="event-save-btn" onclick="saveEvent()">حفظ اليوم</button>
-        <a href="events.html" class="event-cancel-btn">رجوع</a>
+        <button type="button" class="event-save-btn" id="saveBtn">حفظ الفعالية</button>
+        <a href="events.html" class="event-cancel-btn">رجوع للفعاليات</a>
       </div>
     </section>
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-const eventImageInput = document.getElementById("eventImage");
-const previewBox = document.getElementById("previewBox");
-const previewImage = document.getElementById("previewImage");
+document.addEventListener("DOMContentLoaded", function () {
+  const supabase = window.supabase.createClient(
+    "https://mcxdjisoyqdnyieboqpy.supabase.co",
+    "sb_publishable_CoPFxO5-flUjMYi-jOdikw_kwAaUoZr"
+  );
 
-eventImageInput.addEventListener("change", function () {
-  const file = this.files[0];
+  const eventImageInput = document.getElementById("eventImage");
+  const previewBox = document.getElementById("previewBox");
+  const previewImage = document.getElementById("previewImage");
+  const saveBtn = document.getElementById("saveBtn");
 
-  if (!file) {
-    previewBox.style.display = "none";
-    previewImage.src = "";
-    return;
-  }
+  eventImageInput.addEventListener("change", function () {
+    const file = this.files[0];
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    previewImage.src = e.target.result;
-    previewBox.style.display = "block";
-  };
-  reader.readAsDataURL(file);
-});
+    if (!file) {
+      previewBox.style.display = "none";
+      previewImage.src = "";
+      return;
+    }
 
-function saveEvent() {
-  const title = document.getElementById("eventTitle").value.trim();
-  const desc = document.getElementById("eventDesc").value.trim();
-  const date = document.getElementById("eventDate").value;
-  const file = document.getElementById("eventImage").files[0];
-
-  if (!title || !desc || !date) {
-    alert("الرجاء تعبئة عنوان الفعالية والوصف والتاريخ");
-    return;
-  }
-
-  let events = JSON.parse(localStorage.getItem("events")) || [];
-
-  function finishSave(imageData) {
-    const now = new Date();
-    const expiryDate = new Date(now);
-    expiryDate.setDate(expiryDate.getDate() + 7);
-
-    const newEvent = {
-      id: Date.now(),
-      title: title,
-      desc: desc,
-      date: date,
-      image: imageData || "",
-      createdAt: now.toISOString(),
-      expiresAt: expiryDate.toISOString()
-    };
-
-    events.push(newEvent);
-    localStorage.setItem("events", JSON.stringify(events));
-    alert("تم حفظ الفعالية بنجاح");
-    window.location.href = "events.html";
-  }
-
-  if (file) {
     const reader = new FileReader();
     reader.onload = function (e) {
-      finishSave(e.target.result);
+      previewImage.src = e.target.result;
+      previewBox.style.display = "block";
     };
     reader.readAsDataURL(file);
-  } else {
-    finishSave("");
+  });
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        resolve("");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("فشل قراءة الصورة"));
+      reader.readAsDataURL(file);
+    });
   }
-}
+
+  saveBtn.addEventListener("click", async function () {
+    const title = document.getElementById("eventTitle").value.trim();
+    const desc = document.getElementById("eventDesc").value.trim();
+    const date = document.getElementById("eventDate").value;
+    const file = document.getElementById("eventImage").files[0];
+
+    if (!title || !desc || !date) {
+      alert("الرجاء تعبئة عنوان الفعالية والوصف والتاريخ");
+      return;
+    }
+
+    try {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "جاري الحفظ...";
+
+      const imageBase64 = await fileToBase64(file);
+
+      const { error } = await supabase
+        .from("events")
+        .insert([
+          {
+            title: title,
+            description: desc,
+            due_date: date,
+            image_url: imageBase64,
+            status: "current",
+            type: "فعالية",
+            email: "admin@tvtc.edu.sa"
+          }
+        ]);
+
+      if (error) {
+        console.log(error);
+        alert("صار خطأ في الحفظ: " + error.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = "حفظ الفعالية";
+        return;
+      }
+
+      alert("تم حفظ الفعالية بنجاح");
+      window.location.href = "events.html";
+    } catch (err) {
+      console.log(err);
+      alert("صار خطأ غير متوقع");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "حفظ الفعالية";
+    }
+  });
+});
 </script>
 
 </body>
