@@ -138,14 +138,7 @@ body{
   box-shadow:0 3px 10px rgba(0,0,0,0.05);
   border-right:4px solid var(--mid);
   text-align:center;
-  cursor:pointer;
   transition:.2s;
-}
-
-.stat-card.active{
-  background:linear-gradient(to left, var(--dark), var(--mid));
-  color:#fff;
-  border-right:none;
 }
 
 .stat-card h3{
@@ -159,7 +152,7 @@ body{
   margin-top:6px;
 }
 
-/* ===== Reports Sections ===== */
+/* ===== Sections ===== */
 .reports-section{
   margin-top:30px;
 }
@@ -176,12 +169,6 @@ body{
   padding:20px;
   border-radius:16px;
   box-shadow:0 4px 14px rgba(0,0,0,0.05);
-}
-
-.reports-scroll{
-  max-height:420px;
-  overflow-y:auto;
-  padding-left:6px;
 }
 
 /* ===== Report Card ===== */
@@ -241,6 +228,7 @@ body{
   text-align:center;
   margin-top:20px;
 }
+
 /* ===== Mobile Responsive ===== */
 @media (max-width: 768px){
 
@@ -254,8 +242,6 @@ body{
 
   .sidebar{
     position:relative;
-    top:auto;
-    right:auto;
     width:100%;
     height:auto;
     padding:16px;
@@ -280,19 +266,15 @@ body{
     grid-template-columns:1fr;
   }
 
-  .reports-section{
-    margin-top:20px;
-  }
-
-  .report-card{
-    padding:14px;
+  .section-title{
+    font-size:18px;
   }
 
   .reports-box{
     padding:16px;
   }
 
-  .section-title{
-    font-size:18px;
+  .report-card{
+    padding:14px;
   }
 }
