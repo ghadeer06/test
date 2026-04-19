@@ -76,7 +76,7 @@ let currentReport = null;
 async function loadReport(){
   if(!selectedId){
     alert("لم يتم تحديد البلاغ");
-    window.location.href = "admin.html";
+    window.location.href = "reports.html";
     return;
   }
 
@@ -90,7 +90,7 @@ async function loadReport(){
 
   if(error || !data){
     alert("تعذر تحميل البلاغ");
-    window.location.href = "admin.html";
+    window.location.href = "reports.html";
     return;
   }
 
@@ -152,7 +152,7 @@ async function saveStatus(){
   }
 
   alert("تم تحديث حالة البلاغ");
-  window.location.href = "admin.html";
+  window.location.href = "reports.html";
 }
 
 async function deleteReport() {
@@ -171,7 +171,7 @@ async function deleteReport() {
   }
 
   alert("تم حذف البلاغ");
-  window.location.href = "admin.html";
+  window.location.href = "reports.html";
 }
 
 loadReport();
