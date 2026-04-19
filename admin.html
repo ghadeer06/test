@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body>
+<body class="admin-body">
 
 <header class="admin-header">
   <div class="admin-left">
@@ -23,59 +23,64 @@
   <a href="index.html" class="logout">تسجيل الخروج</a>
 </header>
 
-<aside class="sidebar">
-  <div class="sidebar-brand">
-    <h2>محطة الدعم</h2>
-  </div>
+<div class="dashboard-layout">
 
-  <ul class="sidebar-menu">
-    <li class="active"><a href="#">الصفحة الرئيسية</a></li>
-    <li><a href="reports.html">البلاغات</a></li>
-    <li><a href="tasks.html">مهام السلامة</a></li>
-    <li><a href="analytics.html">التقارير</a></li>
-    <li><a href="events.html">الفعاليات والايام العالمية</a></li>
-  </ul>
-</aside>
-
-<main class="admin-main">
-
-  <!-- الكروت -->
-  <div class="admin-cards">
-    <div class="stat-card">
-      <h3>إجمالي البلاغات</h3>
-      <p id="countReports">0</p>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h2>محطة الدعم</h2>
     </div>
 
-    <div class="stat-card">
-      <h3>إجمالي المهام</h3>
-      <p id="countTasks">0</p>
+    <ul class="sidebar-menu">
+      <li class="active"><a href="home.html">الصفحة الرئيسية</a></li>
+      <li><a href="reports.html">البلاغات</a></li>
+      <li><a href="tasks.html">مهام السلامة</a></li>
+      <li><a href="analytics.html">التقارير</a></li>
+      <li><a href="events.html">الفعاليات والايام العالمية</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- Cards -->
+    <div class="admin-cards">
+      <div class="stat-card">
+        <h3>إجمالي البلاغات</h3>
+        <p id="countReports">0</p>
+      </div>
+
+      <div class="stat-card">
+        <h3>إجمالي المهام</h3>
+        <p id="countTasks">0</p>
+      </div>
+
+      <div class="stat-card">
+        <h3>الإشعارات الجديدة</h3>
+        <p id="countNotifications">0</p>
+      </div>
     </div>
 
-    <div class="stat-card">
-      <h3>الإشعارات الجديدة</h3>
-      <p id="countNotifications">0</p>
-    </div>
-  </div>
+    <!-- Latest Reports -->
+    <section class="reports-section">
+      <h2 class="section-title">أحدث البلاغات</h2>
+      <div class="reports-box" id="latestReports"></div>
+    </section>
 
-  <!-- أحدث البلاغات -->
-  <section class="reports-section">
-    <h2 class="section-title">أحدث البلاغات</h2>
-    <div class="reports-box" id="latestReports"></div>
-  </section>
+    <!-- Latest Notifications -->
+    <section class="reports-section">
+      <h2 class="section-title">أحدث الإشعارات</h2>
+      <div class="reports-box" id="latestNotifications"></div>
+    </section>
 
-  <!-- أحدث الإشعارات -->
-  <section class="reports-section">
-    <h2 class="section-title">أحدث الإشعارات</h2>
-    <div class="reports-box" id="latestNotifications"></div>
-  </section>
+    <!-- Latest Tasks -->
+    <section class="reports-section">
+      <h2 class="section-title">أحدث المهام</h2>
+      <div class="reports-box" id="latestTasks"></div>
+    </section>
 
-  <!-- أحدث المهام -->
-  <section class="reports-section">
-    <h2 class="section-title">أحدث المهام</h2>
-    <div class="reports-box" id="latestTasks"></div>
-  </section>
-
-</main>
+  </main>
+</div>
 
 <footer class="main-footer">
   <div class="footer-content">
