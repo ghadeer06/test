@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>التقارير - محطة الدعم</title>
   <link rel="stylesheet" href="analytics.css" />
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- Excel Library -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -29,34 +35,44 @@
     </div>
 
     <ul class="sidebar-menu">
-      <li><a href="admin.html">الصفحة الرئيسية</a></li>
+      <li><a href="home.html">الصفحة الرئيسية</a></li>
       <li><a href="reports.html">البلاغات</a></li>
       <li><a href="tasks.html">مهام السلامة</a></li>
       <li class="active"><a href="analytics.html">التقارير</a></li>
-      <li><a href="events.html">الفعاليات والايام العالمية</a></li>
+      <li><a href="notifications.html">الإشعارات</a></li>
+      <li><a href="events.html">الفعاليات</a></li>
     </ul>
   </aside>
 
   <main class="admin-main">
 
-    
+    <div class="top-user-bar">
+      <div class="user-box">
+        <div class="avatar">س</div>
+        <div class="user-info">
+          <div class="user-name">أ. سارة أحمد</div>
+          <div class="user-role">مسؤولة النظام</div>
+        </div>
+      </div>
+    </div>
+
     <div class="admin-cards">
       <div class="stat-card">
         <h3>تقارير هذا الشهر</h3>
-        <p>12</p>
+        <p id="monthCount">0</p>
         <span>تم إنشاؤها خلال الشهر</span>
       </div>
 
       <div class="stat-card">
         <h3>تقارير اليوم</h3>
-        <p>2</p>
+        <p id="todayCount">0</p>
         <span>تم إصدارها اليوم</span>
       </div>
 
       <div class="stat-card">
-        <h3>تقارير مكتملة</h3>
-        <p>9</p>
-        <span>تمت مراجعتها واعتمادها</span>
+        <h3>إجمالي السجلات</h3>
+        <p id="totalCount">0</p>
+        <span>بلاغات + مهام</span>
       </div>
     </div>
 
@@ -64,17 +80,8 @@
 
       <section class="alerts-panel">
         <h2 class="panel-title">تنبيهات التقارير</h2>
-
-        <div class="alert-item">
-          <strong>تنبيه:</strong> تقرير "مهام السلامة" لم يتم اعتماده بعد.
-        </div>
-
-        <div class="alert-item">
-          <strong>ملاحظة:</strong> تقرير "أداء الصيانة" جاهز للطباعة.
-        </div>
-
-        <div class="alert-item">
-          <strong>تذكير:</strong> تقرير "بلاغات اليوم" يحتاج مراجعة.
+        <div id="alertsBox">
+          <div class="alert-item">جاري تحميل البيانات...</div>
         </div>
       </section>
 
@@ -91,41 +98,11 @@
               <th>الحالة</th>
               <th>التاريخ</th>
               <th>النوع</th>
-              <th>عنوان التقرير</th>
+              <th>العنوان</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td><a href="#" class="action-link">عرض</a></td>
-              <td><span class="status-tag done">مكتمل</span></td>
-              <td>10/4/2026</td>
-              <td>شهري</td>
-              <td>تقرير أداء قسم الصيانة</td>
-            </tr>
-
-            <tr>
-              <td><a href="#" class="action-link">عرض</a></td>
-              <td><span class="status-tag review">قيد المراجعة</span></td>
-              <td>15/4/2026</td>
-              <td>أسبوعي</td>
-              <td>تقرير متابعة مهام السلامة</td>
-            </tr>
-
-            <tr>
-              <td><a href="#" class="action-link">عرض</a></td>
-              <td><span class="status-tag new">جديد</span></td>
-              <td>16/4/2026</td>
-              <td>يومي</td>
-              <td>تقرير بلاغات اليوم</td>
-            </tr>
-
-            <tr>
-              <td><a href="#" class="action-link">عرض</a></td>
-              <td><span class="status-tag review">قيد المراجعة</span></td>
-              <td>14/4/2026</td>
-              <td>شهري</td>
-              <td>تقرير أداء الأمن والسلامة</td>
-            </tr>
+          <tbody id="reportsBody">
+            <tr><td colspan="5">جاري تحميل البيانات...</td></tr>
           </tbody>
         </table>
       </section>
@@ -146,19 +123,104 @@
     </div>
 </footer>
 
-<!-- مكتبة Excel -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<!-- كود التصدير -->
 <script>
+// اتصال Supabase
+const URL = "https://mcxdjisoyqdnyieboqpy.supabase.co";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE";
+const supabase = window.supabase.createClient(URL, KEY);
+
+// تحميل البيانات
+async function loadAnalytics() {
+
+    // جلب البلاغات
+    const { data: reports, error: repErr } = await supabase
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+    // جلب المهام
+    const { data: tasks, error: taskErr } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("due_date", { ascending: false });
+
+    if (repErr || taskErr) {
+        console.error(repErr || taskErr);
+        return;
+    }
+
+    renderTable(reports, tasks);
+    renderStats(reports, tasks);
+    renderAlerts(reports, tasks);
+}
+
+// تعبئة الجدول
+function renderTable(reports, tasks) {
+    const tbody = document.getElementById("reportsBody");
+    tbody.innerHTML = "";
+
+    // البلاغات
+    reports.forEach(r => {
+        tbody.innerHTML += `
+            <tr>
+                <td><a href="#" class="action-link">عرض</a></td>
+                <td><span class="status-tag review">بلاغ</span></td>
+                <td>${r.created_at?.split("T")[0] || "-"}</td>
+                <td>${r.type || "بلاغ"}</td>
+                <td>${r.title || "-"}</td>
+            </tr>
+        `;
+    });
+
+    // المهام
+    tasks.forEach(t => {
+        tbody.innerHTML += `
+            <tr>
+                <td><a href="#" class="action-link">عرض</a></td>
+                <td><span class="status-tag new">مهمة</span></td>
+                <td>${t.due_date || "-"}</td>
+                <td>${t.type || "مهمة"}</td>
+                <td>${t.title || "-"}</td>
+            </tr>
+        `;
+    });
+}
+
+// الإحصائيات
+function renderStats(reports, tasks) {
+    const today = new Date().toISOString().split("T")[0];
+    const month = new Date().getMonth() + 1;
+
+    const todayCount = reports.filter(r => r.created_at?.startsWith(today)).length;
+    const monthCount = reports.filter(r => new Date(r.created_at).getMonth() + 1 === month).length;
+
+    document.getElementById("todayCount").textContent = todayCount;
+    document.getElementById("monthCount").textContent = monthCount;
+    document.getElementById("totalCount").textContent = reports.length + tasks.length;
+}
+
+// التنبيهات
+function renderAlerts(reports, tasks) {
+    const box = document.getElementById("alertsBox");
+    box.innerHTML = "";
+
+    if (reports.length === 0 && tasks.length === 0) {
+        box.innerHTML = `<div class="alert-item">لا توجد بيانات حالياً.</div>`;
+        return;
+    }
+
+    box.innerHTML += `<div class="alert-item"><strong>تنبيه:</strong> تم تحميل ${reports.length} بلاغ و ${tasks.length} مهمة.</div>`;
+}
+
+// تصدير Excel
 document.getElementById("exportExcel").addEventListener("click", function () {
-
     const table = document.getElementById("reportsTable");
-
     const workbook = XLSX.utils.table_to_book(table, { sheet: "التقارير" });
-
     XLSX.writeFile(workbook, "تقارير-محطة-الدعم.xlsx");
 });
+
+// تشغيل عند تحميل الصفحة
+document.addEventListener("DOMContentLoaded", loadAnalytics);
 </script>
 
 </body>
