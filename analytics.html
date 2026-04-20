@@ -60,57 +60,54 @@
     <div class="admin-cards">
 
       <div class="stat-card">
-        <h3>عدد البلاغات</h3>
-        <p id="reportsCount">0</p>
+        <h3>تقارير هذا الشهر</h3>
+        <p id="monthCount">0</p>
+        <span>تم إنشاؤها خلال الشهر</span>
         <button class="btn-pdf" id="exportReportsExcel">تصدير بلاغات Excel</button>
       </div>
 
       <div class="stat-card">
-        <h3>عدد المهام</h3>
-        <p id="tasksCount">0</p>
+        <h3>تقارير اليوم</h3>
+        <p id="todayCount">0</p>
+        <span>تم إصدارها اليوم</span>
         <button class="btn-pdf" id="exportTasksExcel">تصدير مهام Excel</button>
+      </div>
+
+      <div class="stat-card">
+        <h3>إجمالي السجلات</h3>
+        <p id="totalCount">0</p>
+        <span>بلاغات + مهام</span>
       </div>
 
     </div>
 
     <div class="reports-layout">
 
-      <!-- جدول البلاغات -->
+      <section class="alerts-panel">
+        <h2 class="panel-title">تنبيهات التقارير</h2>
+        <div id="alertsBox">
+          <div class="alert-item">جاري تحميل البيانات...</div>
+        </div>
+      </section>
+
       <section class="table-panel">
         <div class="table-header">
-          <h2 class="panel-title">قائمة البلاغات</h2>
+          <h2 class="panel-title">قائمة التقارير</h2>
+          <button class="btn-pdf" id="exportExcel">تصدير Excel</button>
         </div>
 
         <table id="reportsTable">
           <thead>
             <tr>
+              <th>الإجراء</th>
+              <th>الحالة</th>
               <th>التاريخ</th>
               <th>النوع</th>
               <th>العنوان</th>
             </tr>
           </thead>
           <tbody id="reportsBody">
-            <tr><td colspan="3">جاري تحميل البيانات...</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <!-- جدول المهام -->
-      <section class="table-panel">
-        <div class="table-header">
-          <h2 class="panel-title">قائمة المهام</h2>
-        </div>
-
-        <table id="tasksTable">
-          <thead>
-            <tr>
-              <th>الموعد</th>
-              <th>النوع</th>
-              <th>المهمة</th>
-            </tr>
-          </thead>
-          <tbody id="tasksBody">
-            <tr><td colspan="3">جاري تحميل البيانات...</td></tr>
+            <tr><td colspan="5">جاري تحميل البيانات...</td></tr>
           </tbody>
         </table>
       </section>
@@ -157,56 +154,86 @@ async function loadAnalytics() {
         return;
     }
 
-    renderReports(reports);
-    renderTasks(tasks);
+    renderTable(reports, tasks);
+    renderStats(reports, tasks);
+    renderAlerts(reports, tasks);
 }
 
-// عرض البلاغات
-function renderReports(reports) {
-    document.getElementById("reportsCount").textContent = reports.length;
-
+// تعبئة الجدول
+function renderTable(reports, tasks) {
     const tbody = document.getElementById("reportsBody");
     tbody.innerHTML = "";
 
+    // البلاغات
     reports.forEach(r => {
         tbody.innerHTML += `
             <tr>
+                <td><a href="#" class="action-link">عرض</a></td>
+                <td><span class="status-tag review">بلاغ</span></td>
                 <td>${r.created_at?.split("T")[0] || "-"}</td>
-                <td>${r.type || "-"}</td>
+                <td>${r.type || "بلاغ"}</td>
                 <td>${r.title || "-"}</td>
             </tr>
         `;
     });
-}
 
-// عرض المهام
-function renderTasks(tasks) {
-    document.getElementById("tasksCount").textContent = tasks.length;
-
-    const tbody = document.getElementById("tasksBody");
-    tbody.innerHTML = "";
-
+    // المهام
     tasks.forEach(t => {
         tbody.innerHTML += `
             <tr>
+                <td><a href="#" class="action-link">عرض</a></td>
+                <td><span class="status-tag new">مهمة</span></td>
                 <td>${t.due_date || "-"}</td>
-                <td>${t.type || "-"}</td>
+                <td>${t.type || "مهمة"}</td>
                 <td>${t.title || "-"}</td>
             </tr>
         `;
     });
 }
 
-// تصدير بلاغات Excel
+// الإحصائيات
+function renderStats(reports, tasks) {
+    const today = new Date().toISOString().split("T")[0];
+    const month = new Date().getMonth() + 1;
+
+    const todayCount = reports.filter(r => r.created_at?.startsWith(today)).length;
+    const monthCount = reports.filter(r => new Date(r.created_at).getMonth() + 1 === month).length;
+
+    document.getElementById("todayCount").textContent = todayCount;
+    document.getElementById("monthCount").textContent = monthCount;
+    document.getElementById("totalCount").textContent = reports.length + tasks.length;
+}
+
+// التنبيهات
+function renderAlerts(reports, tasks) {
+    const box = document.getElementById("alertsBox");
+    box.innerHTML = "";
+
+    if (reports.length === 0 && tasks.length === 0) {
+        box.innerHTML = `<div class="alert-item">لا توجد بيانات حالياً.</div>`;
+        return;
+    }
+
+    box.innerHTML += `<div class="alert-item"><strong>تنبيه:</strong> تم تحميل ${reports.length} بلاغ و ${tasks.length} مهمة.</div>`;
+}
+
+// زر تصدير Excel الأصلي
+document.getElementById("exportExcel").addEventListener("click", function () {
+    const table = document.getElementById("reportsTable");
+    const workbook = XLSX.utils.table_to_book(table, { sheet: "التقارير" });
+    XLSX.writeFile(workbook, "تقارير-محطة-الدعم.xlsx");
+});
+
+// زر تصدير بلاغات Excel
 document.getElementById("exportReportsExcel").addEventListener("click", function () {
     const table = document.getElementById("reportsTable");
     const workbook = XLSX.utils.table_to_book(table, { sheet: "بلاغات" });
     XLSX.writeFile(workbook, "بلاغات.xlsx");
 });
 
-// تصدير مهام Excel
+// زر تصدير مهام Excel
 document.getElementById("exportTasksExcel").addEventListener("click", function () {
-    const table = document.getElementById("tasksTable");
+    const table = document.getElementById("reportsTable");
     const workbook = XLSX.utils.table_to_book(table, { sheet: "مهام" });
     XLSX.writeFile(workbook, "مهام.xlsx");
 });
