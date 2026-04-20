@@ -7,14 +7,16 @@
   <link rel="stylesheet" href="tasks.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
-    /* تنسيقات إضافية لضمان ظهور التنبيهات والمتأخرات بوضوح */
-    .status-tag.status-late { background-color: #ff4d4d; color: white; } /* للمهام المتأخرة */
-    .alert-danger { 
-        background-color: #fff5f5; 
-        border-right: 5px solid #ff4d4d !important; 
-        color: #d32f2f; 
-    }
-    .task-actions .done-check { color: #28a745; font-weight: bold; font-size: 1.2rem; }
+    /* تنسيقات إضافية لضمان الوضوح */
+    .status-tag.status-late { background-color: #ff4d4d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .status-tag.status-soon { background-color: #ff9800; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .status-tag.status-done { background-color: #4caf50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .status-tag.status-pending { background-color: #2196f3; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+    
+    .alert-danger { background-color: #fff5f5; border-right: 5px solid #ff4d4d !important; color: #d32f2f; padding: 12px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .done-check { color: #28a745; font-weight: bold; font-size: 1.3rem; }
+    .btn-done-task { background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+    .btn-done-task:hover { background-color: #218838; }
   </style>
 </head>
 
@@ -25,55 +27,42 @@
     <img src="img/logo.png" class="admin-logo" alt="Logo">
     <div class="admin-title">
       <h1>مهام السلامة</h1>
-      <span>متابعة المهام اليومية والأسبوعية والشهرية الخاصة بالصحة والسلامة المهنية</span>
+      <span>متابعة المهام بناءً على التواريخ الحقيقية</span>
     </div>
   </div>
   <a href="index.html" class="logout">تسجيل الخروج</a>
 </header>
 
 <div class="dashboard-layout">
-
   <aside class="sidebar">
-    <div class="sidebar-brand">
-      <h2>محطة الدعم</h2>
-    </div>
+    <div class="sidebar-brand"><h2>محطة الدعم</h2></div>
     <ul class="sidebar-menu">
       <li><a href="admin.html">الصفحة الرئيسية</a></li>
-      <li><a href="reports.html">البلاغات</a></li>
       <li class="active"><a href="tasks.html">مهام السلامة</a></li>
-      <li><a href="analytics.html">التقارير</a></li>
-      <li><a href="events.html">الفعاليات والايام العالمية</a></li>
     </ul>
   </aside>
 
   <main class="admin-main">
-
-    <div id="globalReminder" class="reminder-box" style="display:none; background-color: #fff3cd; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ffeeba;"></div>
+    <div id="globalReminder" class="reminder-box" style="display:none; background-color: #fff3cd; padding: 15px; margin-bottom: 20px; border-radius: 8px; border-left: 5px solid #ffc107;"></div>
 
     <div class="admin-cards">
-      <div class="stat-card" onclick="setFilter('done')" style="cursor:pointer;">
+      <div class="stat-card" onclick="setFilter('done')" style="cursor:pointer">
         <h3>المهام المنفذة</h3>
         <p id="doneCount">0</p>
-        <span>إجمالي ما تم إنجازه</span>
       </div>
-
-      <div class="stat-card" onclick="setFilter('active')" style="cursor:pointer;">
+      <div class="stat-card" onclick="setFilter('active')" style="cursor:pointer">
         <h3>المهام الحالية</h3>
         <p id="activeCount">0</p>
-        <span>بانتظار التنفيذ</span>
       </div>
-
-      <div class="stat-card" onclick="setFilter('soon')" style="cursor:pointer;">
-        <h3>تحتاج إجراء عاجل</h3>
+      <div class="stat-card" onclick="setFilter('soon')" style="cursor:pointer">
+        <h3>مهام عاجلة/متأخرة</h3>
         <p id="soonCount">0</p>
-        <span>متأخرة أو موعدها قريب</span>
       </div>
     </div>
 
     <div class="reports-layout">
-
       <section class="alerts-panel">
-        <h2 class="panel-title">تنبيهات المهام العاجلة</h2>
+        <h2 class="panel-title">تنبيهات المواعيد الحقيقية</h2>
         <div id="alertsList">
           <div class="alert-item">جاري فحص المواعيد...</div>
         </div>
@@ -81,232 +70,160 @@
 
       <section class="table-panel">
         <div class="table-header">
-          <h2 class="panel-title">قائمة مهام السلامة</h2>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-pdf" onclick="setFilter('all')">عرض الكل</button>
-            <button class="btn-pdf" onclick="window.print()">تصدير PDF</button>
+          <h2 class="panel-title">جدول المهام</h2>
+          <div style="display:flex; gap:10px;">
+             <button class="btn-pdf" onclick="setFilter('all')">الكل</button>
+             <button class="btn-pdf" onclick="window.print()">تصدير PDF</button>
           </div>
         </div>
-
         <table>
           <thead>
             <tr>
               <th>الإجراء</th>
-              <th>الحالة</th>
-              <th>الموعد</th>
-              <th>التكرار</th>
+              <th>الحالة الحقيقية</th>
+              <th>الموعد القادم</th>
+              <th>نوع المهمة</th>
               <th>المهمة</th>
             </tr>
           </thead>
           <tbody id="tasksTableBody">
-            <tr>
-              <td colspan="5" class="empty-text">جاري تحميل البيانات...</td>
-            </tr>
+            <tr><td colspan="5" class="empty-text">جاري الاتصال بقاعدة البيانات...</td></tr>
           </tbody>
         </table>
       </section>
-
     </div>
   </main>
 </div>
 
-<footer class="main-footer">
-  <div class="footer-content">
-    <p>&copy; 2026 حقوق محفوظة | محطة الدعم</p>
-  </div>
-</footer>
-
 <script>
-/**
- * إعدادات الاتصال بـ Supabase
- */
-const SUPABASE_URL = "https://mcxdjisoyqdnyieboqpy.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE";
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// 1. إعداد الاتصال
+const URL = "https://mcxdjisoyqdnyieboqpy.supabase.co";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE";
+const supabase = window.supabase.createClient(URL, KEY);
 
 let currentFilter = "all";
 
-/**
- * دوال التاريخ والوقت المتقدمة
- */
-function getToday() {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return now;
-}
-
-function daysBetween(dateString) {
+// 2. دوال معالجة الوقت (توقيت محلي)
+function getDaysDiff(dateString) {
     if (!dateString) return 999;
     const target = new Date(dateString);
-    target.setHours(0, 0, 0, 0);
-    const diffTime = target - getToday();
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    target.setHours(0,0,0,0);
+    const diffTime = target - today;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-function formatDate(dateString) {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-GB");
-}
-
-/**
- * منطق الفلترة والعرض
- */
-window.setFilter = (filter) => {
-    currentFilter = filter;
-    loadTasks();
-};
-
+// 3. جلب البيانات
 async function loadTasks() {
-    const { data: tasks, error } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("due_date", { ascending: true });
+    const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('due_date', { ascending: true });
 
     if (error) {
-        console.error("Error fetching tasks:", error);
+        console.error("Error:", error);
+        document.getElementById("alertsList").innerHTML = "خطأ في تحميل البيانات";
         return;
     }
-
-    renderStats(tasks);
-    renderAlerts(tasks);
-    renderTable(tasks);
+    renderUI(data || []);
 }
 
-function renderStats(tasks) {
-    const active = tasks.filter(t => t.status !== "تم التنفيذ").length;
+function renderUI(tasks) {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // حساب الإحصائيات
     const done = tasks.filter(t => t.status === "تم التنفيذ").length;
-    // العاجل هو المتأخر (أقل من 0) أو الذي موعده خلال 3 أيام
-    const soon = tasks.filter(t => t.status !== "تم التنفيذ" && daysBetween(t.due_date) <= 3).length;
+    const active = tasks.filter(t => t.status !== "تم التنفيذ").length;
+    const urgent = tasks.filter(t => t.status !== "تم التنفيذ" && getDaysDiff(t.due_date) <= 3).length;
 
-    document.getElementById("activeCount").textContent = active;
     document.getElementById("doneCount").textContent = done;
-    document.getElementById("soonCount").textContent = soon;
-}
+    document.getElementById("activeCount").textContent = active;
+    document.getElementById("soonCount").textContent = urgent;
 
-function renderAlerts(tasks) {
+    // رندر التنبيهات
     const alertsList = document.getElementById("alertsList");
-    const globalBox = document.getElementById("globalReminder");
     alertsList.innerHTML = "";
-
-    const urgentTasks = tasks.filter(t => t.status !== "تم التنفيذ" && daysBetween(t.due_date) <= 3);
+    const urgentTasks = tasks.filter(t => t.status !== "تم التنفيذ" && getDaysDiff(t.due_date) <= 3);
 
     if (urgentTasks.length === 0) {
-        alertsList.innerHTML = '<div class="alert-item">✅ جميع المهام ضمن الجدول الزمني.</div>';
-        globalBox.style.display = "none";
-        return;
+        alertsList.innerHTML = '<div class="alert-item">✅ لا توجد مهام متأخرة أو عاجلة حالياً.</div>';
+    } else {
+        urgentTasks.forEach(t => {
+            const diff = getDaysDiff(t.due_date);
+            let msg = "";
+            if (diff < 0) msg = `🔴 متأخرة بـ ${Math.abs(diff)} يوم: ${t.title}`;
+            else if (diff === 0) msg = `🟠 المهمة "${t.title}" موعدها اليوم!`;
+            else msg = `⏳ متبقي ${diff} يوم على: ${t.title}`;
+            
+            alertsList.innerHTML += `<div class="alert-danger">${msg}</div>`;
+        });
     }
 
-    globalBox.style.display = "block";
-    globalBox.innerHTML = `⚠️ تنبيه: يوجد <strong>${urgentTasks.length}</strong> مهام عاجلة تتطلب انتباهك الآن.`;
-
-    urgentTasks.forEach(task => {
-        const diff = daysBetween(task.due_date);
-        let msg = "";
-        let cssClass = "alert-item";
-
-        if (diff < 0) {
-            msg = `🔴 متأخرة جداً: المهمة "${task.title}" متأخرة منذ ${Math.abs(diff)} يوم!`;
-            cssClass += " alert-danger";
-        } else if (diff === 0) {
-            msg = `🟠 موعد التنفيذ: المهمة "${task.title}" يجب أن تنفذ اليوم.`;
-        } else {
-            msg = `⏳ تذكير: متبقي ${diff} يوم على "${task.title}".`;
-        }
-
-        alertsList.innerHTML += `<div class="${cssClass}"><strong>تنبيه:</strong> ${msg}</div>`;
-    });
-}
-
-function renderTable(tasks) {
+    // رندر الجدول
     const tbody = document.getElementById("tasksTableBody");
     tbody.innerHTML = "";
 
-    let filtered = tasks;
-    if (currentFilter === "done") filtered = tasks.filter(t => t.status === "تم التنفيذ");
-    else if (currentFilter === "active") filtered = tasks.filter(t => t.status !== "تم التنفيذ");
-    else if (currentFilter === "soon") filtered = tasks.filter(t => t.status !== "تم التنفيذ" && daysBetween(t.due_date) <= 3);
+    let displayList = tasks;
+    if (currentFilter === "done") displayList = tasks.filter(t => t.status === "تم التنفيذ");
+    else if (currentFilter === "active") displayList = tasks.filter(t => t.status !== "تم التنفيذ");
+    else if (currentFilter === "soon") displayList = urgentTasks;
 
-    if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty-text">لا توجد مهام مطابقة للبحث.</td></tr>';
-        return;
-    }
-
-    filtered.forEach(task => {
-        const diff = daysBetween(task.due_date);
-        let statusText = "قيد المتابعة";
-        let statusClass = "status-pending";
+    displayList.forEach(task => {
+        const diff = getDaysDiff(task.due_date);
+        let sClass = "status-pending";
+        let sText = "قيد المتابعة";
 
         if (task.status === "تم التنفيذ") {
-            statusText = "تم التنفيذ";
-            statusClass = "status-done";
+            sClass = "status-done"; sText = "تم التنفيذ";
         } else if (diff < 0) {
-            statusText = "متأخرة";
-            statusClass = "status-late";
+            sClass = "status-late"; sText = "متأخرة";
         } else if (diff <= 3) {
-            statusText = "تحتاج تذكير";
-            statusClass = "status-soon";
+            sClass = "status-soon"; sText = "عاجلة";
         }
-
-        const actionContent = task.status === "تم التنفيذ" 
-            ? '<span class="done-check">✓</span>' 
-            : `<button class="btn-small btn-done" onclick="completeTask(${task.id}, '${task.type}', '${task.due_date}')">تم التنفيذ</button>`;
 
         tbody.innerHTML += `
             <tr>
-              <td>${actionContent}</td>
-              <td><span class="status-tag ${statusClass}">${statusText}</span></td>
-              <td>${formatDate(task.due_date)}</td>
-              <td>${task.type || "-"}</td>
-              <td>${task.title || "-"}</td>
+                <td>
+                    ${task.status === "تم التنفيذ" 
+                        ? '<span class="done-check">✓</span>' 
+                        : `<button class="btn-done-task" onclick="completeTask('${task.id}', '${task.type}', '${task.due_date}')">تم التنفيذ</button>`}
+                </td>
+                <td><span class="status-tag ${sClass}">${sText}</span></td>
+                <td>${task.due_date || '-'}</td>
+                <td>${task.type || '-'}</td>
+                <td>${task.title || '-'}</td>
             </tr>
         `;
     });
 }
 
-/**
- * دالة إنجاز المهمة (تتعامل مع المهام الدورية)
- */
 async function completeTask(id, type, currentDate) {
-    let nextDate = null;
+    let updateObj = {};
     const d = new Date(currentDate);
 
-    // إذا كانت المهمة دورية، نحسب الموعد القادم، إذا كانت "مرة واحدة" تبقى كما هي وتتغير حالتها
-    if (type === "يومي") d.setDate(d.getDate() + 1);
-    else if (type === "أسبوعي") d.setDate(d.getDate() + 7);
-    else if (type === "شهري") d.setMonth(d.getMonth() + 1);
-
-    nextDate = d.toISOString().split('T')[0];
-
-    const updateData = {
-        completed_at: new Date().toISOString()
-    };
-
     if (type === "مرة واحدة") {
-        updateData.status = "تم التنفيذ";
+        updateObj = { status: "تم التنفيذ", completed_at: new Date().toISOString() };
     } else {
-        // للمهام الدورية نحدث التاريخ للموعد القادم لتبقى "نشطة"
-        updateData.due_date = nextDate;
-        updateData.status = "قيد المتابعة";
+        // إذا كانت دورية، نحسب الموعد القادم وتبقى "قيد المتابعة"
+        if (type === "يومي") d.setDate(d.getDate() + 1);
+        else if (type === "أسبوعي") d.setDate(d.getDate() + 7);
+        else if (type === "شهري") d.setMonth(d.getMonth() + 1);
+        
+        updateObj = { 
+            due_date: d.toISOString().split('T')[0], 
+            status: "قيد المتابعة",
+            completed_at: new Date().toISOString()
+        };
     }
 
-    const { error } = await supabase
-        .from("tasks")
-        .update(updateData)
-        .eq("id", id);
-
-    if (error) {
-        alert("حدث خطأ أثناء التحديث");
-    } else {
-        loadTasks();
-    }
+    const { error } = await supabase.from('tasks').update(updateObj).eq('id', id);
+    if (error) alert("خطأ في التحديث");
+    else loadTasks();
 }
 
-// التشغيل الأولي وتحديث البيانات كل دقيقة
+window.setFilter = (f) => { currentFilter = f; loadTasks(); };
 document.addEventListener("DOMContentLoaded", loadTasks);
-setInterval(loadTasks, 60000);
-
 </script>
-
 </body>
 </html>
