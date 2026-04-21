@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // نص تحميل داخل المربعات
   document.getElementById("latestNotifications").innerHTML =
-    "<div class='loading-box'>جارٍ تحميل الإشعارات...</div>";
+    "<div class='loading-box'>جارٍ تحميل الفعاليات...</div>";
 
   document.getElementById("latestTasks").innerHTML =
     "<div class='loading-box'>جارٍ تحميل المهام...</div>";
@@ -78,45 +78,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
 
   // ===============================
-  // جلب آخر 5 إشعارات من جدول tasks
-  // ===============================
-  async function loadLatestNotifications() {
-    const box = document.getElementById("latestNotifications");
-
-    const { data, error } = await supabaseClient
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    if (error) {
-      box.innerHTML = "<div class='empty-box'>خطأ في تحميل الإشعارات</div>";
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      box.innerHTML = "<div class='empty-box'>لا توجد إشعارات</div>";
-      return;
-    }
-
-    box.innerHTML = "";
-    data.forEach(item => {
-      box.innerHTML += `
-        <div class="report-card">
-          <h3>${item.title || "بدون عنوان"}</h3>
-          <p>النوع: ${item.type || "-"}</p>
-          <p>الحالة: ${item.status || "-"}</p>
-          <span class="date">${item.due_date || ""}</span>
-        </div>
-      `;
-    });
-  }
-
-  // ===============================
-  // جلب آخر 5 فعاليات من جدول events
+  // 1) جلب آخر 5 فعاليات (الإشعارات)
   // ===============================
   async function loadLatestEvents() {
-    const box = document.getElementById("latestTasks");
+    const box = document.getElementById("latestNotifications");
 
     const { data, error } = await supabaseClient
       .from("events")
@@ -125,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       .limit(5);
 
     if (error) {
-      box.innerHTML = "<div class='empty-box'>خطأ في تحميل المهام</div>";
+      box.innerHTML = "<div class='empty-box'>خطأ في تحميل الفعاليات</div>";
       return;
     }
 
@@ -146,11 +111,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // ===============================
+  // 2) جلب آخر 5 مهام (المهام)
+  // ===============================
+  async function loadLatestTasks() {
+    const box = document.getElementById("latestTasks");
+
+    const { data, error } = await supabaseClient
+      .from("tasks")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error) {
+      box.innerHTML = "<div class='empty-box'>خطأ في تحميل المهام</div>";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      box.innerHTML = "<div class='empty-box'>لا توجد مهام</div>";
+      return;
+    }
+
+    box.innerHTML = "";
+    data.forEach(task => {
+      box.innerHTML += `
+        <div class="report-card">
+          <h3>${task.title || "بدون عنوان"}</h3>
+          <p>النوع: ${task.type || "-"}</p>
+          <p>الحالة: ${task.status || "-"}</p>
+          <span class="date">${task.due_date || ""}</span>
+        </div>
+      `;
+    });
+  }
+
   // تشغيل الدوال
-  loadLatestNotifications();
-  loadLatestEvents();
+  loadLatestEvents();  // الإشعارات = الفعاليات
+  loadLatestTasks();   // المهام = المهام
 });
 </script>
+
 
 </body>
 
