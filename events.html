@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>الفعاليات - محطة الدعم</title>
 
-  <!-- مهم جدًا ./ -->
-  <link rel="stylesheet" href="./analytics.css" />
+  <!-- ❌ حذف analytics.css -->
   <link rel="stylesheet" href="./events.css" />
 </head>
 
@@ -40,9 +39,8 @@
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // 🔥 أهم شي: تأكد المكتبة موجودة
   if (!window.supabase) {
-    alert("Supabase ما تحمل ❌");
+    document.body.innerHTML = "في مشكلة تحميل المكتبة ❌";
     return;
   }
 
