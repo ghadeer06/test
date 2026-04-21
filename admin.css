@@ -278,3 +278,20 @@ body{
     padding:14px;
   }
 }
+html, body {
+  height: 100%;
+}
+
+.dashboard-layout {
+  min-height: calc(100vh - 80px); /* ارتفاع الهيدر */
+  display: flex;
+}
+
+.admin-main {
+  flex: 1;
+  padding-bottom: 40px; /* مساحة للفوتر */
+}
+
+.main-footer {
+  margin-top: auto;
+}
