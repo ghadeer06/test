@@ -40,23 +40,30 @@
     <div id="globalReminder" class="reminder-box" style="display:none;"></div>
 
     <div class="admin-cards">
-      <div class="stat-card">
-        <h3>المهام المنفذة</h3>
-        <p id="doneCount">0</p>
-        <span>خلال آخر 7 أيام</span>
+      <div class="stat-card filter-card" id="soonCard" onclick="setFilter('soon')">
+        <h3>المهام القريبة</h3>
+        <p id="soonCount">0</p>
+        <span>تحتاج متابعة</span>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card filter-card" id="processingCard" onclick="setFilter('processing')">
         <h3>يتم المعالجة</h3>
         <p id="processingCount">0</p>
         <span>قيد العمل الآن</span>
       </div>
 
-      <div class="stat-card">
-        <h3>المهام القريبة</h3>
-        <p id="soonCount">0</p>
-        <span>تحتاج متابعة</span>
+      <div class="stat-card filter-card" id="doneCard" onclick="setFilter('done')">
+        <h3>المهام المنفذة</h3>
+        <p id="doneCount">0</p>
+        <span>خلال آخر 7 أيام</span>
       </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" id="filterAllBtn" onclick="setFilter('all')">الكل</button>
+      <button class="filter-btn" id="filterSoonBtn" onclick="setFilter('soon')">القريبة</button>
+      <button class="filter-btn" id="filterProcessingBtn" onclick="setFilter('processing')">يتم المعالجة</button>
+      <button class="filter-btn" id="filterDoneBtn" onclick="setFilter('done')">المنفذة</button>
     </div>
 
     <div class="reports-layout">
@@ -73,7 +80,7 @@
           <button class="btn-excel" onclick="exportExcel()">تصدير Excel</button>
         </div>
 
-        <table>
+        <table id="tasksTable">
           <thead>
             <tr>
               <th>الإجراء</th>
@@ -101,10 +108,9 @@
 </footer>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
   const role = localStorage.getItem("user_role");
-
-  if (role !== "admin") {
+  if (role && role !== "admin") {
     alert("هذه الصفحة خاصة بالمسؤول فقط");
     window.location.href = "login.html";
     return;
@@ -116,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   let currentTasks = [];
+  let currentFilter = "all";
 
   function todayISO() {
     const d = new Date();
@@ -125,11 +132,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function formatDate(dateString) {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-GB");
+    const d = new Date(dateString);
+    return d.toLocaleDateString("en-GB");
   }
 
   function daysBetween(dateString) {
     if (!dateString) return 9999;
+
     const today = new Date();
     today.setHours(0,0,0,0);
 
@@ -141,8 +150,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function daysSince(dateString) {
     if (!dateString) return null;
+
     const now = new Date();
     const past = new Date(dateString);
+
     return Math.floor((now - past) / (1000 * 60 * 60 * 24));
   }
 
@@ -161,13 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function nextDateByType(currentDate, type) {
-    const baseDate = currentDate || todayISO();
-
-    if (type === "يومي") return addDays(baseDate, 1);
-    if (type === "أسبوعي") return addDays(baseDate, 7);
-    if (type === "شهري") return addMonths(baseDate, 1);
-
-    return baseDate;
+    if (type === "يومي") return addDays(currentDate, 1);
+    if (type === "أسبوعي") return addDays(currentDate, 7);
+    if (type === "شهري") return addMonths(currentDate, 1);
+    return currentDate;
   }
 
   async function refreshRecurringTasks(tasks) {
@@ -182,19 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const task of toReset) {
       await supabase
         .from("tasks")
-        .update({ status: "قيد المتابعة", completed_at: null })
+        .update({
+          status: "قيد التنفيذ",
+          completed_at: null
+        })
         .eq("id", task.id);
     }
-  }
-
-  function getVisibleTasks(tasks) {
-    return tasks.filter(task => {
-      if (task.type !== "مرة واحدة") return true;
-      if (task.status !== "تم التنفيذ") return true;
-
-      const elapsed = daysSince(task.completed_at);
-      return elapsed !== null && elapsed < 7;
-    });
   }
 
   function getTaskStatus(task) {
@@ -212,36 +213,44 @@ document.addEventListener("DOMContentLoaded", () => {
     if (diff === 0) return { text: "موعدها اليوم", className: "status-soon" };
     if (diff <= 3) return { text: "تحتاج متابعة", className: "status-soon" };
 
-    return { text: "قيد المتابعة", className: "status-pending" };
+    return { text: "قيد التنفيذ", className: "status-pending" };
+  }
+
+  function getDoneTasks(tasks) {
+    return tasks.filter(task => {
+      if (task.status !== "تم التنفيذ") return false;
+      const elapsed = daysSince(task.completed_at);
+      return elapsed !== null && elapsed < 7;
+    });
+  }
+
+  function getProcessingTasks(tasks) {
+    return tasks.filter(task => task.status === "يتم المعالجة");
+  }
+
+  function getSoonTasks(tasks) {
+    return tasks.filter(task =>
+      task.status !== "تم التنفيذ" &&
+      daysBetween(task.due_date) <= 3
+    );
+  }
+
+  function getFilteredTasks(tasks) {
+    if (currentFilter === "done") return getDoneTasks(tasks);
+    if (currentFilter === "processing") return getProcessingTasks(tasks);
+    if (currentFilter === "soon") return getSoonTasks(tasks);
+    return tasks;
   }
 
   function renderStats(tasks) {
-    const visibleTasks = getVisibleTasks(tasks);
-
-    const doneCount = visibleTasks.filter(task => {
-      const elapsed = daysSince(task.completed_at);
-      return elapsed !== null && elapsed < 7;
-    }).length;
-
-    const processingCount = visibleTasks.filter(task => task.status === "يتم المعالجة").length;
-
-    const soonCount = visibleTasks.filter(task => {
-      if (task.status === "تم التنفيذ") return false;
-      return daysBetween(task.due_date) <= 3;
-    }).length;
-
-    document.getElementById("doneCount").textContent = doneCount;
-    document.getElementById("processingCount").textContent = processingCount;
-    document.getElementById("soonCount").textContent = soonCount;
+    document.getElementById("doneCount").textContent = getDoneTasks(tasks).length;
+    document.getElementById("processingCount").textContent = getProcessingTasks(tasks).length;
+    document.getElementById("soonCount").textContent = getSoonTasks(tasks).length;
   }
 
   function renderGlobalReminder(tasks) {
     const box = document.getElementById("globalReminder");
-
-    const soonTasks = tasks.filter(task => {
-      if (task.status === "تم التنفيذ") return false;
-      return daysBetween(task.due_date) <= 3;
-    });
+    const soonTasks = getSoonTasks(tasks);
 
     if (soonTasks.length === 0) {
       box.style.display = "none";
@@ -256,10 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const alertsList = document.getElementById("alertsList");
     alertsList.innerHTML = "";
 
-    const soonTasks = tasks.filter(task => {
-      if (task.status === "تم التنفيذ") return false;
-      return daysBetween(task.due_date) <= 3;
-    });
+    const soonTasks = getSoonTasks(tasks);
 
     if (soonTasks.length === 0) {
       alertsList.innerHTML = `
@@ -274,9 +280,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const diff = daysBetween(task.due_date);
       let text = "";
 
-      if (diff < 0) text = `المهمة "${task.title}" متأخرة عن موعدها.`;
-      else if (diff === 0) text = `المهمة "${task.title}" موعدها اليوم.`;
-      else text = `تبقى ${diff} يوم على المهمة "${task.title}".`;
+      if (diff < 0) {
+        text = `المهمة "${task.title}" متأخرة عن موعدها.`;
+      } else if (diff === 0) {
+        text = `المهمة "${task.title}" موعدها اليوم.`;
+      } else {
+        text = `تبقى ${diff} يوم على المهمة "${task.title}".`;
+      }
 
       alertsList.innerHTML += `
         <div class="alert-item">
@@ -290,25 +300,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const tbody = document.getElementById("tasksTableBody");
     tbody.innerHTML = "";
 
-    const visibleTasks = getVisibleTasks(tasks);
+    const filteredTasks = getFilteredTasks(tasks);
 
-    if (visibleTasks.length === 0) {
+    if (!filteredTasks || filteredTasks.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" class="empty-text">لا توجد مهام حالياً</td>
+          <td colspan="5" class="empty-text">لا توجد مهام في هذا التصنيف</td>
         </tr>
       `;
       return;
     }
 
-    visibleTasks.forEach(task => {
+    filteredTasks.forEach(task => {
       const status = getTaskStatus(task);
 
       let actions = "";
 
       if (task.status !== "تم التنفيذ") {
-        actions += `<button class="btn-small btn-process" onclick="setProcessing(${task.id})">يتم المعالجة</button>`;
-        actions += `<button class="btn-small btn-done" onclick="completeTask(${task.id}, '${String(task.type).replace(/'/g, "\\'")}', '${task.due_date}')">تم التنفيذ</button>`;
+        actions += `
+          <button class="btn-small btn-process" onclick="setProcessing(${task.id})">
+            يتم المعالجة
+          </button>
+        `;
+        actions += `
+          <button class="btn-small btn-done" onclick="completeTask(${task.id}, '${String(task.type).replace(/'/g, "\\'")}', '${task.due_date}')">
+            تم التنفيذ
+          </button>
+        `;
       }
 
       tbody.innerHTML += `
@@ -316,14 +334,39 @@ document.addEventListener("DOMContentLoaded", () => {
           <td><div class="task-actions">${actions}</div></td>
           <td><span class="status-tag ${status.className}">${status.text}</span></td>
           <td>${formatDate(task.due_date)}</td>
-          <td>${task.type || "-"}</td>
-          <td>${task.title || "-"}</td>
+          <td>${task.type}</td>
+          <td>${task.title}</td>
         </tr>
       `;
     });
   }
 
-  async function setProcessing(id) {
+  function updateFilterUI() {
+    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll(".filter-card").forEach(card => card.classList.remove("active-card"));
+
+    if (currentFilter === "all") document.getElementById("filterAllBtn").classList.add("active");
+    if (currentFilter === "soon") {
+      document.getElementById("filterSoonBtn").classList.add("active");
+      document.getElementById("soonCard").classList.add("active-card");
+    }
+    if (currentFilter === "processing") {
+      document.getElementById("filterProcessingBtn").classList.add("active");
+      document.getElementById("processingCard").classList.add("active-card");
+    }
+    if (currentFilter === "done") {
+      document.getElementById("filterDoneBtn").classList.add("active");
+      document.getElementById("doneCard").classList.add("active-card");
+    }
+  }
+
+  window.setFilter = function(filterName) {
+    currentFilter = filterName;
+    updateFilterUI();
+    renderTable(currentTasks);
+  };
+
+  window.setProcessing = async function(id) {
     const { error } = await supabase
       .from("tasks")
       .update({ status: "يتم المعالجة" })
@@ -335,22 +378,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadTasks();
-  }
+  };
 
-  async function completeTask(id, type, dueDate) {
-    let payload = {};
+  window.completeTask = async function(id, type, dueDate) {
+    let payload = {
+      status: "تم التنفيذ",
+      completed_at: new Date().toISOString()
+    };
 
-    if (type === "مرة واحدة") {
-      payload = {
-        status: "تم التنفيذ",
-        completed_at: new Date().toISOString()
-      };
-    } else {
-      payload = {
-        due_date: nextDateByType(dueDate, type),
-        status: "تم التنفيذ",
-        completed_at: new Date().toISOString()
-      };
+    if (type !== "مرة واحدة") {
+      payload.due_date = nextDateByType(dueDate, type);
     }
 
     const { error } = await supabase
@@ -364,15 +401,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadTasks();
-  }
+  };
 
-  window.setProcessing = setProcessing;
-  window.completeTask = completeTask;
-
-  function exportExcel() {
+  window.exportExcel = function() {
     const rows = [["المهمة","النوع","الموعد القادم","الحالة"]];
+    const exportTasks = getFilteredTasks(currentTasks);
 
-    currentTasks.forEach(task => {
+    exportTasks.forEach(task => {
       const status = getTaskStatus(task);
       rows.push([
         task.title || "",
@@ -396,9 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }
-
-  window.exportExcel = exportExcel;
+  };
 
   async function loadTasks() {
     const alertsList = document.getElementById("alertsList");
@@ -435,6 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStats(currentTasks);
     renderGlobalReminder(currentTasks);
     renderAlerts(currentTasks);
+    updateFilterUI();
     renderTable(currentTasks);
   }
 
