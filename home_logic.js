@@ -1,8 +1,8 @@
 // ===============================
 // 1) تهيئة Supabase
 // ===============================
-const supabaseUrl = "YOUR_URL";
-const supabaseKey = "YOUR_ANON_KEY";
+const supabaseUrl = "https://mcxdjisoyqdnyieboqpy.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE";
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 // ===============================
