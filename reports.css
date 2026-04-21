@@ -410,3 +410,26 @@ body{
   content:"📊";
   font-size:16px;
 }
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-main {
+    flex: 1; /* يخلي المحتوى يتمدد ويدفع الفوتر للأسفل */
+}
+
+.main-footer {
+    background: #0F2F4A;
+    color: white;
+    padding: 15px 0;
+    text-align: center;
+    margin-top: auto; /* أهم سطر يخلي الفوتر تحت */
+}
