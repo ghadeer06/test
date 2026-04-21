@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="tasks.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
-
 <body>
 
 <header class="admin-header">
@@ -15,7 +14,7 @@
     <img src="img/logo.png" class="admin-logo" alt="Logo">
     <div class="admin-title">
       <h1>مهام السلامة</h1>
-      <span>متابعة المهام اليومية والأسبوعية والشهرية الخاصة بالصحة والسلامة المهنية</span>
+      <span>متابعة المهام الدورية الخاصة بالصحة والسلامة المهنية</span>
     </div>
   </div>
   <a href="index.html" class="logout">تسجيل الخروج</a>
@@ -32,31 +31,33 @@
       <li><a href="admin.html">الصفحة الرئيسية</a></li>
       <li><a href="reports.html">البلاغات</a></li>
       <li class="active"><a href="tasks.html">مهام السلامة</a></li>
+      <li><a href="analytics.html">التقارير</a></li>
       <li><a href="notifications.html">الإشعارات</a></li>
       <li><a href="events.html">الفعاليات</a></li>
     </ul>
   </aside>
 
- <main class="admin-main">
+  <main class="admin-main">
+
     <div id="globalReminder" class="reminder-box" style="display:none;"></div>
 
     <div class="admin-cards">
-      <div class="stat-card" onclick="setFilter('done')">
+      <div class="stat-card">
         <h3>المهام المنفذة</h3>
         <p id="doneCount">0</p>
         <span>خلال آخر 7 أيام</span>
       </div>
 
-      <div class="stat-card" onclick="setFilter('active')">
+      <div class="stat-card">
         <h3>المهام الحالية</h3>
         <p id="activeCount">0</p>
         <span>إجمالي المهام النشطة</span>
       </div>
 
-      <div class="stat-card" onclick="setFilter('soon')">
+      <div class="stat-card">
         <h3>المهام القريبة</h3>
         <p id="soonCount">0</p>
-        <span>تحتاج تذكير</span>
+        <span>تحتاج متابعة</span>
       </div>
     </div>
 
@@ -72,10 +73,7 @@
       <section class="table-panel">
         <div class="table-header">
           <h2 class="panel-title">قائمة مهام السلامة</h2>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-pdf" onclick="setFilter('all')">عرض الكل</button>
-          <button class="btn-pdf" id="exportExcel">تصدير Excel</button>
-          </div>
+          <button class="btn-excel" onclick="exportExcel()">تصدير Excel</button>
         </div>
 
         <table>
@@ -109,29 +107,49 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  const role = localStorage.getItem("user_role");
+
+  if (role !== "admin") {
+    alert("هذه الصفحة خاصة بالمسؤول فقط");
+    window.location.href = "login.html";
+    return;
+  }
+
   if (!window.supabase) {
     document.getElementById("alertsList").innerHTML = `
       <div class="alert-item"><strong>خطأ:</strong> مكتبة Supabase ما تحملت.</div>
-    `;
-    document.getElementById("tasksTableBody").innerHTML = `
-      <tr><td colspan="5" class="empty-text">فشل تحميل المكتبة</td></tr>
     `;
     return;
   }
 
   const supabase = window.supabase.createClient(
     "https://mcxdjisoyqdnyieboqpy.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE".replace("eyJpc3MiOiJIUzI1NiIsInR5cCI6IkpXVCJ9.","")
   );
 
-  let currentFilter = "all";
+  let currentTasks = [];
 
-  function setFilter(filter) {
-    currentFilter = filter;
-    loadTasks();
+  const TASK_TEMPLATES = [
+    { title: "الالتزام بالزي الرسمي", type: "يومي" },
+    { title: "فحص سلامة تخزين الأدوية", type: "يومي" },
+    { title: "تأمين محتويات صناديق الإسعافات الأولية داخل الأقسام والورش بالتنسيق مع مشرف السلامة", type: "يومي" },
+    { title: "الإشراف على وسائل مكافحة العدوى", type: "يومي" },
+    { title: "التأكد من وجود اللوحات الإرشادية والتثقيفية الصحية وسلامتها", type: "يومي" },
+    { title: "التنسيق مع مدير الشؤون الصحية لتوفير التطعيمات الموسمية للإنفلونزا", type: "مرة واحدة", due_date: "2026-09-01" },
+    { title: "التنسيق مع بنوك الدم المحلية لتنفيذ حملات تبرع", type: "مرة واحدة", due_date: "2026-09-15" },
+    { title: "فحص سلامة المقصف في البوفيه", type: "يومي" },
+    { title: "فحص صلاحية الشهادات الصحية للعاملين في البوفيه", type: "مرة واحدة", due_date: "2026-10-01" },
+    { title: "ترتيب وتنظيم العيادة", type: "يومي" },
+    { title: "إعداد وتنفيذ دورات إسعافات أولية", type: "مرة واحدة", due_date: "2026-10-10" },
+    { title: "تنفيذ حملات ومحاضرات تثقيفية وتوعوية", type: "مرة واحدة", due_date: "2026-10-20" },
+    { title: "إرسال نماذج الإحصائيات", type: "شهري" }
+  ];
+
+  function todayISO() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().split("T")[0];
   }
-
-  window.setFilter = setFilter;
 
   function formatDate(dateString) {
     if (!dateString) return "-";
@@ -140,6 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function daysBetween(dateString) {
     if (!dateString) return 9999;
+
     const today = new Date();
     today.setHours(0,0,0,0);
 
@@ -151,29 +170,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function daysSince(dateString) {
     if (!dateString) return null;
+
     const now = new Date();
     const past = new Date(dateString);
+
     return Math.floor((now - past) / (1000 * 60 * 60 * 24));
   }
 
-  function nextDateByType(currentDate, type) {
-    if (!currentDate) return new Date().toISOString().split("T")[0];
-
-    const d = new Date(currentDate);
+  function addDays(dateString, amount) {
+    const d = new Date(dateString);
     d.setHours(0,0,0,0);
-
-    if (type === "يومي") d.setDate(d.getDate() + 1);
-    else if (type === "أسبوعي") d.setDate(d.getDate() + 7);
-    else if (type === "شهري") d.setMonth(d.getMonth() + 1);
-    else if (type === "مرة واحدة") return currentDate;
-
+    d.setDate(d.getDate() + amount);
     return d.toISOString().split("T")[0];
+  }
+
+  function addMonths(dateString, amount) {
+    const d = new Date(dateString);
+    d.setHours(0,0,0,0);
+    d.setMonth(d.getMonth() + amount);
+    return d.toISOString().split("T")[0];
+  }
+
+  function nextDateByType(currentDate, type) {
+    const baseDate = currentDate || todayISO();
+
+    if (type === "يومي") return addDays(baseDate, 1);
+    if (type === "أسبوعي") return addDays(baseDate, 7);
+    if (type === "شهري") return addMonths(baseDate, 1);
+
+    return baseDate;
+  }
+
+  function dedupeByTitle(tasks) {
+    const map = new Map();
+
+    tasks.forEach(task => {
+      if (!map.has(task.title)) {
+        map.set(task.title, task);
+      }
+    });
+
+    return Array.from(map.values());
+  }
+
+  async function seedTasksIfEmpty() {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, title");
+
+    if (error) throw error;
+
+    const existing = data || [];
+    if (existing.length > 0) return;
+
+    const rows = TASK_TEMPLATES.map(task => ({
+      title: task.title,
+      type: task.type,
+      due_date: task.due_date || todayISO(),
+      status: "قيد المتابعة",
+      completed_at: null
+    }));
+
+    const { error: insertError } = await supabase
+      .from("tasks")
+      .insert(rows);
+
+    if (insertError) throw insertError;
   }
 
   function getVisibleTasks(tasks) {
     return tasks.filter(task => {
-      if (task.status !== "تم التنفيذ") return true;
       if (task.type !== "مرة واحدة") return true;
+      if (task.status !== "تم التنفيذ") return true;
 
       const elapsed = daysSince(task.completed_at);
       return elapsed !== null && elapsed < 7;
@@ -181,64 +249,60 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getTaskStatus(task) {
-    const diff = daysBetween(task.due_date);
-
-    if (task.status === "تم التنفيذ") {
+    if (task.type === "مرة واحدة" && task.status === "تم التنفيذ") {
       return { text: "تم التنفيذ", className: "status-done" };
     }
+
+    const diff = daysBetween(task.due_date);
 
     if (diff < 0) {
       return { text: "متأخرة", className: "status-soon" };
     }
 
+    if (diff === 0) {
+      return { text: "موعدها اليوم", className: "status-soon" };
+    }
+
     if (diff <= 3) {
-      return { text: "تحتاج تذكير", className: "status-soon" };
+      return { text: "تحتاج متابعة", className: "status-soon" };
     }
 
     return { text: "قيد المتابعة", className: "status-pending" };
   }
 
-  async function completeTask(id, type, dueDate) {
-    const nextDueDate = nextDateByType(dueDate, type);
-
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        due_date: nextDueDate,
-        status: "تم التنفيذ",
-        completed_at: new Date().toISOString()
-      })
-      .eq("id", id);
-
-    if (error) {
-      document.getElementById("alertsList").innerHTML = `
-        <div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>
-      `;
-      return;
-    }
-
-    loadTasks();
+  function getDoneCount(tasks) {
+    return tasks.filter(task => {
+      const elapsed = daysSince(task.completed_at);
+      return elapsed !== null && elapsed < 7;
+    }).length;
   }
 
-  window.completeTask = completeTask;
+  function getActiveCount(tasks) {
+    return tasks.filter(task => !(task.type === "مرة واحدة" && task.status === "تم التنفيذ")).length;
+  }
+
+  function getSoonCount(tasks) {
+    return tasks.filter(task => {
+      if (task.type === "مرة واحدة" && task.status === "تم التنفيذ") return false;
+      return daysBetween(task.due_date) <= 3;
+    }).length;
+  }
 
   function renderStats(tasks) {
     const visibleTasks = getVisibleTasks(tasks);
 
-    const doneTasks = visibleTasks.filter(t => t.status === "تم التنفيذ");
-    const activeTasks = visibleTasks.filter(t => t.status !== "تم التنفيذ");
-    const soonTasks = activeTasks.filter(t => daysBetween(t.due_date) <= 3);
-
-    document.getElementById("doneCount").textContent = doneTasks.length;
-    document.getElementById("activeCount").textContent = activeTasks.length;
-    document.getElementById("soonCount").textContent = soonTasks.length;
-    document.getElementById("reminderCount").textContent = soonTasks.length;
+    document.getElementById("doneCount").textContent = getDoneCount(visibleTasks);
+    document.getElementById("activeCount").textContent = getActiveCount(visibleTasks);
+    document.getElementById("soonCount").textContent = getSoonCount(visibleTasks);
   }
 
   function renderGlobalReminder(tasks) {
     const box = document.getElementById("globalReminder");
-    const visibleTasks = getVisibleTasks(tasks);
-    const soonTasks = visibleTasks.filter(t => t.status !== "تم التنفيذ" && daysBetween(t.due_date) <= 3);
+
+    const soonTasks = tasks.filter(task => {
+      if (task.type === "مرة واحدة" && task.status === "تم التنفيذ") return false;
+      return daysBetween(task.due_date) <= 3;
+    });
 
     if (soonTasks.length === 0) {
       box.style.display = "none";
@@ -246,36 +310,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     box.style.display = "block";
-    box.textContent = `يوجد ${soonTasks.length} مهمة تحتاج تذكير أو متابعة قريبة.`;
+    box.textContent = `يوجد ${soonTasks.length} مهمة تحتاج تذكير أو متابعة قريبة`;
   }
 
   function renderAlerts(tasks) {
     const alertsList = document.getElementById("alertsList");
     alertsList.innerHTML = "";
 
-    const visibleTasks = getVisibleTasks(tasks);
-    const alertTasks = visibleTasks.filter(t => t.status !== "تم التنفيذ" && daysBetween(t.due_date) <= 3);
+    const soonTasks = tasks.filter(task => {
+      if (task.type === "مرة واحدة" && task.status === "تم التنفيذ") return false;
+      return daysBetween(task.due_date) <= 3;
+    });
 
-    if (alertTasks.length === 0) {
+    if (soonTasks.length === 0) {
       alertsList.innerHTML = `
         <div class="alert-item">
-          <strong>ملاحظة:</strong> لا توجد مهام تحتاج تذكير حاليًا.
+          <strong>ملاحظة:</strong> لا توجد تنبيهات حالياً.
         </div>
       `;
       return;
     }
 
-    alertTasks.forEach(task => {
+    soonTasks.forEach(task => {
       const diff = daysBetween(task.due_date);
-      let msg = "";
 
-      if (diff < 0) msg = `المهمة "${task.title}" متأخرة عن موعدها.`;
-      else if (diff === 0) msg = `المهمة "${task.title}" موعدها اليوم.`;
-      else msg = `تبقى ${diff} يوم على المهمة "${task.title}".`;
+      let text = "";
+      if (diff < 0) {
+        text = `المهمة "${task.title}" متأخرة عن موعدها.`;
+      } else if (diff === 0) {
+        text = `المهمة "${task.title}" موعدها اليوم.`;
+      } else {
+        text = `تبقى ${diff} يوم على المهمة "${task.title}".`;
+      }
 
       alertsList.innerHTML += `
         <div class="alert-item">
-          <strong>تنبيه:</strong> ${msg}
+          <strong>تنبيه:</strong> ${text}
         </div>
       `;
     });
@@ -285,17 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tbody = document.getElementById("tasksTableBody");
     tbody.innerHTML = "";
 
-    let visibleTasks = getVisibleTasks(tasks);
-
-    if (currentFilter === "done") {
-      visibleTasks = visibleTasks.filter(task => task.status === "تم التنفيذ");
-    } else if (currentFilter === "active") {
-      visibleTasks = visibleTasks.filter(task => task.status !== "تم التنفيذ");
-    } else if (currentFilter === "soon") {
-      visibleTasks = visibleTasks.filter(task => {
-        return task.status !== "تم التنفيذ" && daysBetween(task.due_date) <= 3;
-      });
-    }
+    const visibleTasks = getVisibleTasks(tasks);
 
     if (visibleTasks.length === 0) {
       tbody.innerHTML = `
@@ -310,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const status = getTaskStatus(task);
 
       let actionButton = "";
-      if (task.status !== "تم التنفيذ") {
+      if (!(task.type === "مرة واحدة" && task.status === "تم التنفيذ")) {
         actionButton = `
           <button class="btn-small btn-done" onclick="completeTask(${task.id}, '${String(task.type).replace(/'/g, "\\'")}', '${task.due_date}')">
             تم التنفيذ
@@ -336,6 +396,72 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  async function completeTask(id, type, dueDate) {
+    let payload = {};
+
+    if (type === "مرة واحدة") {
+      payload = {
+        status: "تم التنفيذ",
+        completed_at: new Date().toISOString()
+      };
+    } else {
+      payload = {
+        due_date: nextDateByType(dueDate, type),
+        status: "قيد المتابعة",
+        completed_at: new Date().toISOString()
+      };
+    }
+
+    const { error } = await supabase
+      .from("tasks")
+      .update(payload)
+      .eq("id", id);
+
+    if (error) {
+      document.getElementById("alertsList").innerHTML = `
+        <div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>
+      `;
+      return;
+    }
+
+    await loadTasks();
+  }
+
+  window.completeTask = completeTask;
+
+  function exportExcel() {
+    const rows = [
+      ["المهمة", "النوع", "الموعد القادم", "الحالة"]
+    ];
+
+    currentTasks.forEach(task => {
+      const status = getTaskStatus(task);
+      rows.push([
+        task.title || "",
+        task.type || "",
+        formatDate(task.due_date),
+        status.text
+      ]);
+    });
+
+    const csvContent = "\uFEFF" + rows.map(row =>
+      row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")
+    ).join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.href = url;
+    link.download = "مهام_السلامة.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  window.exportExcel = exportExcel;
+
   async function loadTasks() {
     const alertsList = document.getElementById("alertsList");
     const tbody = document.getElementById("tasksTableBody");
@@ -343,41 +469,45 @@ document.addEventListener("DOMContentLoaded", () => {
     alertsList.innerHTML = `<div class="alert-item"><strong>جاري التحميل...</strong></div>`;
     tbody.innerHTML = `<tr><td colspan="5" class="empty-text">جاري تحميل البيانات...</td></tr>`;
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("id", { ascending: true });
+    try {
+      await seedTasksIfEmpty();
 
-    if (error) {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) {
+        alertsList.innerHTML = `
+          <div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>
+        `;
+        tbody.innerHTML = `
+          <tr><td colspan="5" class="empty-text">فشل تحميل البيانات</td></tr>
+        `;
+        return;
+      }
+
+      const tasks = dedupeByTitle(data || []);
+      currentTasks = tasks;
+
+      renderStats(tasks);
+      renderGlobalReminder(tasks);
+      renderAlerts(tasks);
+      renderTable(tasks);
+
+    } catch (err) {
       alertsList.innerHTML = `
-        <div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>
+        <div class="alert-item"><strong>خطأ:</strong> ${err.message}</div>
       `;
       tbody.innerHTML = `
-        <tr><td colspan="5" class="empty-text">فشل تحميل البيانات</td></tr>
+        <tr><td colspan="5" class="empty-text">صار خطأ غير متوقع</td></tr>
       `;
-      return;
     }
-
-    const tasks = data || [];
-
-    renderStats(tasks);
-    renderGlobalReminder(tasks);
-    renderAlerts(tasks);
-    renderTable(tasks);
   }
 
   loadTasks();
   setInterval(loadTasks, 60000);
 });
-  document.getElementById("exportExcel").addEventListener("click", function () {
-
-    const table = document.getElementById("tasksTable");
-
-    const workbook = XLSX.utils.table_to_book(table, { sheet: "التقارير" });
-
-    XLSX.writeFile(workbook, "تقارير-محطة-الدعم.xlsx");
-});
-
 </script>
 
 </body>
