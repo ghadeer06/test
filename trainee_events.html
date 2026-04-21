@@ -1,1 +1,114 @@
-student_events.html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الفعاليات</title>
+    <link rel="stylesheet" href="reports.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<!-- الهيدر -->
+<header class="admin-header">
+  <div class="admin-left">
+    <img src="img/logo.png" class="admin-logo" alt="Logo">
+    <div class="admin-title">
+      <h1>الفعاليات</h1>
+      <span>محطة الدعم</span>
+    </div>
+  </div>
+
+  <a href="index.html" class="logout">تسجيل الخروج</a>
+</header>
+
+<!-- القائمة الجانبية -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h2>محطة الدعم</h2>
+  </div>
+
+  <ul class="sidebar-menu">
+    <li><a href="trainee_Home.html">الصفحة الرئيسية</a></li>
+    <li><a href="trainee_reports.html">بلاغاتي</a></li>
+    <li class="active"><a href="trainee_events.html">الفعاليات</a></li>
+  </ul>
+</aside>
+
+<!-- المحتوى -->
+<main class="admin-main" style="flex:1; padding-top:50px;">
+
+  <section class="reports-section" style="max-width:900px; margin:auto; margin-top:40px;">
+    <h2 class="section-title" style="text-align:center;">الفعاليات المتاحة</h2>
+
+    <div class="reports-box">
+      <div class="reports-scroll" id="eventsList"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+function getClient() {
+  return window.supabase.createClient(
+    'https://mcxdjisoyqdnyieboqpy.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE'
+  );
+}
+
+const container = document.getElementById("eventsList");
+
+async function loadEvents() {
+    try {
+        const supabase = getClient();
+
+        const { data, error } = await supabase
+            .from("events")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            container.innerHTML = `<p class="empty-text">خطأ في تحميل الفعاليات</p>`;
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<p class="empty-text">لا توجد فعاليات حالياً</p>`;
+            return;
+        }
+
+        container.innerHTML = "";
+
+        data.forEach(ev => {
+            container.innerHTML += `
+                <div class="report-card">
+                    <h3>${ev.title || "فعالية"}</h3>
+                    <p><b>الوصف:</b> ${ev.description || "-"}</p>
+                    <p><b>التاريخ:</b> ${ev.date ? ev.date.split("T")[0] : "-"}</p>
+                    <p><b>الموقع:</b> ${ev.location || "-"}</p>
+                </div>
+            `;
+        });
+
+    } catch (e) {
+        container.innerHTML = `<p class="empty-text">صار خطأ غير متوقع</p>`;
+    }
+}
+
+loadEvents();
+</script>
+
+<!-- الفوتر -->
+<footer class="main-footer">
+  <div class="footer-content">
+    <p>&copy; 2026 حقوق محفوظة | محطة الدعم </p>
+    <ul class="footer-links">
+      <li><a href="index.html">الرئيسية</a></li>
+      <li><a href="about.html">عن الموقع</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
