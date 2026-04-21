@@ -23,7 +23,6 @@
 </header>
 
 <div class="dashboard-layout">
-
   <aside class="sidebar">
     <div class="sidebar-brand">
       <h2>محطة الدعم</h2>
@@ -34,7 +33,7 @@
       <li><a href="reports.html">البلاغات</a></li>
       <li><a href="tasks.html">مهام السلامة</a></li>
       <li><a href="analytics.html">التقارير</a></li>
-      <li class="active"><a href="events.html">الفعاليات</a></li>
+      <li class="active"><a href="events.html">الفعاليات والايام العالمية</a></li>
     </ul>
   </aside>
 
@@ -48,20 +47,23 @@
         <a href="add_event.html" class="add-event-btn">إضافة فعالية</a>
       </div>
 
-      <div id="currentEventsContainer" class="events-grid"></div>
+      <div id="currentEventsContainer" class="events-grid">
+        <div class="empty-box">جارِ تحميل الفعاليات...</div>
+      </div>
     </section>
 
     <section class="events-section-box">
       <h2 class="panel-title no-margin">فعاليات سابقة</h2>
       <div class="section-subtitle">الفعاليات التي مرّ عليها أكثر من أسبوع</div>
-      <div id="pastEventsContainer" class="events-grid"></div>
+      <div id="pastEventsContainer" class="events-grid">
+        <div class="empty-box">جارِ تحميل الفعاليات...</div>
+      </div>
     </section>
 
   </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", async function () {
   const supabase = window.supabase.createClient(
@@ -75,11 +77,9 @@ document.addEventListener("DOMContentLoaded", async function () {
   function formatArabicDate(dateString) {
     const date = new Date(dateString);
     if (isNaN(date)) return dateString;
-
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-
     return `${day} / ${month} / ${year}`;
   }
 
@@ -97,27 +97,21 @@ document.addEventListener("DOMContentLoaded", async function () {
     `;
   }
 
-  window.deleteEvent = async function(id) {
+  window.deleteEvent = async function (id) {
     if (!confirm("هل أنت متأكد من حذف الفعالية؟")) return;
 
-    const { error } = await supabase
-      .from("events")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("events").delete().eq("id", id);
 
     if (error) {
-      console.log("DELETE ERROR:", error);
       alert("فشل حذف الفعالية");
+      console.log(error);
       return;
     }
 
-    loadEvents();
+    location.reload();
   };
 
-  async function loadEvents() {
-    currentContainer.innerHTML = "";
-    pastContainer.innerHTML = "";
-
+  try {
     const { data, error } = await supabase
       .from("events")
       .select("*")
@@ -132,6 +126,9 @@ document.addEventListener("DOMContentLoaded", async function () {
       return;
     }
 
+    currentContainer.innerHTML = "";
+    pastContainer.innerHTML = "";
+
     if (!data || data.length === 0) {
       currentContainer.innerHTML = `<div class="empty-box">لا توجد فعاليات جديدة</div>`;
       pastContainer.innerHTML = `<div class="empty-box">لا توجد فعاليات سابقة</div>`;
@@ -143,7 +140,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     data.forEach(event => {
       const created = new Date(event.created_at);
       const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-
       const card = createEventCard(event);
 
       if (diffDays <= 7) {
@@ -160,9 +156,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (pastContainer.innerHTML.trim() === "") {
       pastContainer.innerHTML = `<div class="empty-box">لا توجد فعاليات سابقة</div>`;
     }
-  }
 
-  loadEvents();
+  } catch (err) {
+    console.log("CATCH ERROR:", err);
+    currentContainer.innerHTML = `<div class="empty-box">صار خطأ غير متوقع</div>`;
+    pastContainer.innerHTML = `<div class="empty-box">صار خطأ غير متوقع</div>`;
+  }
 });
 </script>
 
