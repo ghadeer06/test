@@ -110,6 +110,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const role = localStorage.getItem("user_role");
+
   if (role && role !== "admin") {
     alert("هذه الصفحة خاصة بالمسؤول فقط");
     window.location.href = "login.html";
@@ -123,12 +124,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let currentTasks = [];
   let currentFilter = "all";
-
-  function todayISO() {
-    const d = new Date();
-    d.setHours(0,0,0,0);
-    return d.toISOString().split("T")[0];
-  }
 
   function formatDate(dateString) {
     if (!dateString) return "-";
@@ -178,26 +173,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return currentDate;
   }
 
-  async function refreshRecurringTasks(tasks) {
-    const today = todayISO();
-
-    const toReset = tasks.filter(task =>
-      task.type !== "مرة واحدة" &&
-      task.status === "تم التنفيذ" &&
-      task.due_date <= today
-    );
-
-    for (const task of toReset) {
-      await supabase
-        .from("tasks")
-        .update({
-          status: "قيد التنفيذ",
-          completed_at: null
-        })
-        .eq("id", task.id);
-    }
-  }
-
   function getTaskStatus(task) {
     if (task.status === "تم التنفيذ") {
       return { text: "تم التنفيذ", className: "status-done" };
@@ -218,7 +193,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function getDoneTasks(tasks) {
     return tasks.filter(task => {
-      if (task.status !== "تم التنفيذ") return false;
       const elapsed = daysSince(task.completed_at);
       return elapsed !== null && elapsed < 7;
     });
@@ -258,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     box.style.display = "block";
-    box.textContent = `يوجد ${soonTasks.length} مهمة تحتاج متابعة قريبة`;
+    box.textContent = `يوجد ${soonTasks.length} مهمة تحتاج تذكير أو متابعة قريبة`;
   }
 
   function renderAlerts(tasks) {
@@ -382,11 +356,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.completeTask = async function(id, type, dueDate) {
     let payload = {
-      status: "تم التنفيذ",
       completed_at: new Date().toISOString()
     };
 
-    if (type !== "مرة واحدة") {
+    if (type === "مرة واحدة") {
+      payload.status = "تم التنفيذ";
+    } else {
+      payload.status = "قيد التنفيذ";
       payload.due_date = nextDateByType(dueDate, type);
     }
 
@@ -451,19 +427,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    await refreshRecurringTasks(data || []);
-
-    const { data: refreshedData, error: refreshedError } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("id", { ascending: true });
-
-    if (refreshedError) {
-      alertsList.innerHTML = `<div class="alert-item"><strong>خطأ:</strong> ${refreshedError.message}</div>`;
-      return;
-    }
-
-    currentTasks = refreshedData || [];
+    currentTasks = data || [];
 
     renderStats(currentTasks);
     renderGlobalReminder(currentTasks);
