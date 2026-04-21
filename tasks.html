@@ -30,6 +30,8 @@
       <li><a href="admin.html">الصفحة الرئيسية</a></li>
       <li><a href="reports.html">البلاغات</a></li>
       <li class="active"><a href="tasks.html">مهام السلامة</a></li>
+      <li><a href="analytics.html">التقارير</a></li>
+      <li><a href="notifications.html">الإشعارات</a></li>
       <li><a href="events.html">الفعاليات والأيام العالمية</a></li>
     </ul>
   </aside>
@@ -38,10 +40,10 @@
     <div id="globalReminder" class="reminder-box" style="display:none;"></div>
 
     <div class="admin-cards">
-      <div class="stat-card filter-card" id="soonCard" onclick="setFilter('soon')">
-        <h3>المهام القريبة</h3>
-        <p id="soonCount">0</p>
-        <span>تحتاج متابعة</span>
+      <div class="stat-card filter-card active-card" id="allCard" onclick="setFilter('all')">
+        <h3>المهام</h3>
+        <p id="allCount">0</p>
+        <span>كل المهام الحالية</span>
       </div>
 
       <div class="stat-card filter-card" id="processingCard" onclick="setFilter('processing')">
@@ -51,17 +53,10 @@
       </div>
 
       <div class="stat-card filter-card" id="doneCard" onclick="setFilter('done')">
-        <h3>المهام المنفذة</h3>
+        <h3>المنفذة</h3>
         <p id="doneCount">0</p>
-        <span>خلال آخر 7 أيام</span>
+        <span>آخر 7 أيام</span>
       </div>
-    </div>
-
-    <div class="filter-bar">
-      <button class="filter-btn active" id="filterAllBtn" onclick="setFilter('all')">الكل</button>
-      <button class="filter-btn" id="filterSoonBtn" onclick="setFilter('soon')">القريبة</button>
-      <button class="filter-btn" id="filterProcessingBtn" onclick="setFilter('processing')">يتم المعالجة</button>
-      <button class="filter-btn" id="filterDoneBtn" onclick="setFilter('done')">المنفذة</button>
     </div>
 
     <div class="reports-layout">
@@ -74,7 +69,7 @@
 
       <section class="table-panel">
         <div class="table-header">
-          <h2 class="panel-title">قائمة مهام السلامة</h2>
+          <h2 class="panel-title" id="tableTitle">قائمة مهام السلامة</h2>
           <button class="btn-excel" onclick="exportExcel()">تصدير Excel</button>
         </div>
 
@@ -83,7 +78,7 @@
             <tr>
               <th>الإجراء</th>
               <th>الحالة</th>
-              <th>الموعد القادم</th>
+              <th>الموعد</th>
               <th>النوع</th>
               <th>المهمة</th>
             </tr>
@@ -123,12 +118,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentTasks = [];
   let currentFilter = "all";
 
-  function formatDate(dateString) {
-    if (!dateString) return "-";
-    const [y, m, d] = dateString.split("-");
-    return `${d}/${m}/${y}`;
-  }
-
   function parseDateOnly(dateString) {
     const [y, m, d] = dateString.split("-").map(Number);
     return new Date(y, m - 1, d);
@@ -139,6 +128,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const m = String(dateObj.getMonth() + 1).padStart(2, "0");
     const d = String(dateObj.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return "-";
+    const [y, m, d] = dateString.split("-");
+    return `${d}/${m}/${y}`;
   }
 
   function daysBetween(dateString) {
@@ -195,6 +190,23 @@ document.addEventListener("DOMContentLoaded", function () {
     return dateString;
   }
 
+  function getDueLabel(task) {
+    const diff = daysBetween(task.due_date);
+
+    if (task.status === "تم التنفيذ") {
+      return formatDate(task.due_date);
+    }
+
+    if (diff < 0) return `متأخرة (${formatDate(task.due_date)})`;
+    if (diff === 0) return "موعدها اليوم";
+    if (diff === 1) return "موعدها غدًا";
+    if (diff >= 6 && diff <= 8) return "موعدها الأسبوع القادم";
+    if (task.type === "شهري" && diff >= 27 && diff <= 31) return "موعدها الشهر القادم";
+    if (task.type === "سبتمبر/أكتوبر") return "موعدها في سبتمبر";
+
+    return formatDate(task.due_date);
+  }
+
   function getTaskStatus(task) {
     if (task.status === "تم التنفيذ") {
       return { text: "تم التنفيذ", className: "status-done" };
@@ -209,7 +221,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (diff < 0) return { text: "متأخرة", className: "status-soon" };
     if (diff === 0) return { text: "موعدها اليوم", className: "status-soon" };
     if (diff === 1) return { text: "موعدها غدًا", className: "status-soon" };
-    if (diff <= 3) return { text: `باقي ${diff} أيام`, className: "status-soon" };
+    if (diff <= 3) return { text: "قريبة", className: "status-soon" };
 
     return { text: "قيد التنفيذ", className: "status-pending" };
   }
@@ -226,6 +238,10 @@ document.addEventListener("DOMContentLoaded", function () {
     return tasks.filter(task => task.status === "يتم المعالجة");
   }
 
+  function getActiveTasks(tasks) {
+    return tasks.filter(task => task.status !== "تم التنفيذ");
+  }
+
   function getSoonTasks(tasks) {
     return tasks.filter(task => {
       if (task.status === "تم التنفيذ") return false;
@@ -236,14 +252,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function getFilteredTasks(tasks) {
     if (currentFilter === "done") return getDoneTasks(tasks);
     if (currentFilter === "processing") return getProcessingTasks(tasks);
-    if (currentFilter === "soon") return getSoonTasks(tasks);
-    return tasks;
+    return getActiveTasks(tasks);
   }
 
   function renderStats(tasks) {
-    document.getElementById("doneCount").textContent = getDoneTasks(tasks).length;
+    document.getElementById("allCount").textContent = getActiveTasks(tasks).length;
     document.getElementById("processingCount").textContent = getProcessingTasks(tasks).length;
-    document.getElementById("soonCount").textContent = getSoonTasks(tasks).length;
+    document.getElementById("doneCount").textContent = getDoneTasks(tasks).length;
   }
 
   function renderGlobalReminder(tasks) {
@@ -298,7 +313,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function renderTable(tasks) {
     const tbody = document.getElementById("tasksTableBody");
+    const tableTitle = document.getElementById("tableTitle");
     tbody.innerHTML = "";
+
+    if (currentFilter === "all") tableTitle.textContent = "قائمة المهام";
+    if (currentFilter === "processing") tableTitle.textContent = "المهام التي يتم معالجتها";
+    if (currentFilter === "done") tableTitle.textContent = "المهام المنفذة";
 
     const filteredTasks = getFilteredTasks(tasks);
 
@@ -333,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <tr>
           <td><div class="task-actions">${actions}</div></td>
           <td><span class="status-tag ${status.className}">${status.text}</span></td>
-          <td>${formatDate(task.due_date)}</td>
+          <td>${getDueLabel(task)}</td>
           <td>${task.type}</td>
           <td>${task.title}</td>
         </tr>
@@ -342,27 +362,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateFilterUI() {
-    document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
     document.querySelectorAll(".filter-card").forEach(card => card.classList.remove("active-card"));
 
-    if (currentFilter === "all") {
-      document.getElementById("filterAllBtn").classList.add("active");
-    }
-
-    if (currentFilter === "soon") {
-      document.getElementById("filterSoonBtn").classList.add("active");
-      document.getElementById("soonCard").classList.add("active-card");
-    }
-
-    if (currentFilter === "processing") {
-      document.getElementById("filterProcessingBtn").classList.add("active");
-      document.getElementById("processingCard").classList.add("active-card");
-    }
-
-    if (currentFilter === "done") {
-      document.getElementById("filterDoneBtn").classList.add("active");
-      document.getElementById("doneCard").classList.add("active-card");
-    }
+    if (currentFilter === "all") document.getElementById("allCard").classList.add("active-card");
+    if (currentFilter === "processing") document.getElementById("processingCard").classList.add("active-card");
+    if (currentFilter === "done") document.getElementById("doneCard").classList.add("active-card");
   }
 
   window.setFilter = function(filterName) {
@@ -385,6 +389,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     await loadTasks();
+    currentFilter = "processing";
+    updateFilterUI();
+    renderTable(currentTasks);
   };
 
   window.completeTask = async function(id, type, dueDate, title) {
@@ -425,10 +432,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     await loadTasks();
+    currentFilter = "done";
+    updateFilterUI();
+    renderTable(currentTasks);
   };
 
   window.exportExcel = function() {
-    const rows = [["المهمة","النوع","الموعد القادم","الحالة"]];
+    const rows = [["المهمة","النوع","الموعد","الحالة"]];
     const exportTasks = getFilteredTasks(currentTasks);
 
     exportTasks.forEach(task => {
@@ -436,7 +446,7 @@ document.addEventListener("DOMContentLoaded", function () {
       rows.push([
         task.title || "",
         task.type || "",
-        formatDate(task.due_date),
+        getDueLabel(task),
         status.text
       ]);
     });
