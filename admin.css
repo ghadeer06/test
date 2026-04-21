@@ -295,3 +295,11 @@ html, body {
 .main-footer {
   margin-top: auto;
 }
+.loading-box {
+  padding: 15px;
+  background: #f1f1f1;
+  border-radius: 8px;
+  text-align: center;
+  color: #555;
+  font-size: 15px;
+}
