@@ -433,3 +433,30 @@ tbody tr:nth-child(even){
   transform:translateY(-2px);
   box-shadow:0 8px 18px rgba(0,0,0,0.08);
 }
+/* 🔥 زر تصدير Excel */
+.btn-excel{
+  border:none;
+  background:linear-gradient(to left, #15803d, #16a34a); /* أخضر متدرّج */
+  color:#fff;
+  padding:8px 16px;
+  border-radius:10px;
+  font-weight:900;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.12);
+  transition:.2s;
+}
+
+.btn-excel:hover{
+  background:linear-gradient(to left, #166534, #15803d);
+  transform:translateY(-1px);
+}
+
+/* أيقونة بسيطة داخل الزر (اختياري) */
+.btn-excel::before{
+  content:"📊";
+  font-size:16px;
+}
