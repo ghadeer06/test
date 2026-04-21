@@ -62,7 +62,96 @@
 </div>
 
 
-<script src="home_logic.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+
+  // نص تحميل داخل المربعات
+  document.getElementById("latestNotifications").innerHTML =
+    "<div class='loading-box'>جارٍ تحميل الإشعارات...</div>";
+
+  document.getElementById("latestTasks").innerHTML =
+    "<div class='loading-box'>جارٍ تحميل المهام...</div>";
+
+  // تهيئة Supabase
+  const supabaseClient = window.supabase.createClient(
+    "https://mcxdjisoyqdnyieboqpy.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE"
+  );
+
+  // ===============================
+  // جلب آخر 5 إشعارات من جدول tasks
+  // ===============================
+  async function loadLatestNotifications() {
+    const box = document.getElementById("latestNotifications");
+
+    const { data, error } = await supabaseClient
+      .from("tasks")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error) {
+      box.innerHTML = "<div class='empty-box'>خطأ في تحميل الإشعارات</div>";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      box.innerHTML = "<div class='empty-box'>لا توجد إشعارات</div>";
+      return;
+    }
+
+    box.innerHTML = "";
+    data.forEach(item => {
+      box.innerHTML += `
+        <div class="report-card">
+          <h3>${item.title || "بدون عنوان"}</h3>
+          <p>النوع: ${item.type || "-"}</p>
+          <p>الحالة: ${item.status || "-"}</p>
+          <span class="date">${item.due_date || ""}</span>
+        </div>
+      `;
+    });
+  }
+
+  // ===============================
+  // جلب آخر 5 فعاليات من جدول events
+  // ===============================
+  async function loadLatestEvents() {
+    const box = document.getElementById("latestTasks");
+
+    const { data, error } = await supabaseClient
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error) {
+      box.innerHTML = "<div class='empty-box'>خطأ في تحميل المهام</div>";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      box.innerHTML = "<div class='empty-box'>لا توجد فعاليات</div>";
+      return;
+    }
+
+    box.innerHTML = "";
+    data.forEach(event => {
+      box.innerHTML += `
+        <div class="report-card">
+          <h3>${event.title || "بدون عنوان"}</h3>
+          <p>${event.description || ""}</p>
+          <span class="date">${event.date || ""}</span>
+        </div>
+      `;
+    });
+  }
+
+  // تشغيل الدوال
+  loadLatestNotifications();
+  loadLatestEvents();
+});
+</script>
 
 </body>
 
