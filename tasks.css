@@ -150,7 +150,7 @@ body{
   display:grid;
   grid-template-columns:repeat(3, 1fr);
   gap:16px;
-  margin-bottom:14px;
+  margin-bottom:20px;
 }
 
 .stat-card{
@@ -199,30 +199,6 @@ body{
   color:#8b97a3;
   font-size:13px;
   font-weight:700;
-}
-
-.filter-bar{
-  display:flex;
-  gap:8px;
-  margin-bottom:18px;
-  flex-wrap:wrap;
-}
-
-.filter-btn{
-  border:none;
-  background:#eef3f8;
-  color:var(--dark);
-  padding:9px 14px;
-  border-radius:10px;
-  font-family:inherit;
-  font-weight:900;
-  cursor:pointer;
-  transition:.2s ease;
-}
-
-.filter-btn.active{
-  background:linear-gradient(135deg, var(--dark), var(--mid));
-  color:#fff;
 }
 
 .reports-layout{
