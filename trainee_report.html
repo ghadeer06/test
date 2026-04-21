@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بلاغاتي</title>
+  <link rel="stylesheet" href="style_report.css">
+</head>
+
+<body>
+
+<!-- الهيدر -->
+<div class="header">سجل البلاغات</div>
+
+<!-- القائمة الجانبية -->
+<div class="sidebar">
+ 
+
+<!-- المحتوى -->
+<div class="container" style="margin-top:40px; margin-right:260px;">
+  <div class="card">
+
+    <h2 style="margin-bottom:15px; color:#0F2F4A; font-weight:900;">جميع البلاغات</h2>
+
+    <div id="reportsList">
+      <div class="loading-box">جاري تحميل البلاغات...</div>
+    </div>
+
+    <button class="light" onclick="window.location.href='trainee_home.html'">رجوع</button>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+function getClient() {
+  return window.supabase.createClient(
+    'https://mcxdjisoyqdnyieboqpy.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE'
+  );
+}
+
+async function loadReports() {
+  const supabase = getClient();
+
+  const { data, error } = await supabase
+    .from("reports")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const list = document.getElementById("reportsList");
+  list.innerHTML = "";
+
+  if (error) {
+    list.innerHTML = "<p class='empty-text'>حدث خطأ أثناء تحميل البيانات</p>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    list.innerHTML = "<p class='empty-text'>لا توجد بلاغات</p>";
+    return;
+  }
+
+  data.forEach(report => {
+    list.innerHTML += `
+      <div class="report-card">
+        <div class="report-head">
+          <h3>${report.type}</h3>
+          <span class="status-tag">${report.status}</span>
+        </div>
+
+        <p><strong>الموقع:</strong> ${report.location}</p>
+        <p><strong>الوصف:</strong> ${report.description}</p>
+        <p><strong>التاريخ:</strong> ${report.created_at.split("T")[0]}</p>
+
+        ${report.image_url ? `<img src="${report.image_url}" style="width:100%; border-radius:10px; margin-top:10px;">` : ""}
+      </div>
+    `;
+  });
+}
+
+loadReports();
+</script>
+
+<!-- الفوتر -->
+<footer class="main-footer">
+  <div class="footer-content">
+    <p>&copy; 2026 حقوق محفوظة | محطة الدعم </p>
+    <ul class="footer-links">
+      <li><a href="index.html">الرئيسية</a></li>
+      <li><a href="#">عن الموقع</a></li>
+      <li><a href="mailto:example@example.com">اتصل بنا</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
