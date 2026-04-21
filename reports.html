@@ -66,7 +66,10 @@ if (email !== ADMIN_EMAIL) {
       </button>
     </div>
     
-<button class="btn-excel" onclick="exportToExcel()">تصدير Excel</button>
+<div class="table-header">
+          <h2 class="panel-title">قائمة البلاغات </h2>
+          <button class="btn-excel" onclick="exportExcel()">تصدير Excel</button>
+        </div>
 
     <section class="reports-section">
       <h2 class="section-title">بلاغات المدربين</h2>
@@ -238,36 +241,36 @@ async function loadReports() {
 loadReports();
 
 
-/* ================================
-   🔥 تصدير البلاغات إلى Excel
-================================ */
-async function exportReportsExcel() {
-    const supabase = getClient();
+		 function exportExcel() {
+    const rows = [
+      ["المهمة", "النوع", "الموعد القادم", "الحالة"]
+    ];
 
-    const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("id", { ascending: false });
-
-    if (error || !data) {
-        alert("حدث خطأ أثناء التصدير");
-        return;
-    }
-
-    let csv = "ID,النوع,الوصف,الموقع,المرسل,الإيميل,الدور,الحالة\n";
-
-    data.forEach(r => {
-        csv += `${r.id || "-"},${r.type || "-"},${r.description || "-"},${r.location || "-"},${r.sender_name || "-"},${r.sender_email || "-"},${r.sender_role || "-"},${normalizeStatus(r.status)}\n`;
+    currentTasks.forEach(task => {
+      const status = getTaskStatus(task);
+      rows.push([
+        task.title || "",
+        task.type || "",
+        formatDate(task.due_date),
+        status.text
+      ]);
     });
 
-    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    let url = URL.createObjectURL(blob);
+    const csvContent = "\uFEFF" + rows.map(row =>
+      row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")
+    ).join("\n");
 
-    let link = document.createElement("a");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
     link.href = url;
-    link.download = "reports.csv";
+    link.download = "مهام_السلامة.csv";
+    document.body.appendChild(link);
     link.click();
-}
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
 </script>
 
