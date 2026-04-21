@@ -123,73 +123,6 @@ body{
   padding:20px 24px;
 }
 
-/* User box */
-.top-user-bar{
-  display:flex;
-  justify-content:flex-start;
-  margin-bottom:18px;
-}
-
-.user-box{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  background:#fff;
-  padding:10px 14px;
-  border-radius:14px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.05);
-}
-
-.avatar{
-  width:46px;
-  height:46px;
-  border-radius:50%;
-  background:#2563EB;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:900;
-  font-size:22px;
-}
-
-.user-info{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-}
-
-.user-name{
-  font-weight:900;
-  font-size:16px;
-}
-
-.user-role{
-  color:#666;
-  font-size:13px;
-}
-
-.notifications{
-  margin-right:8px;
-  position:relative;
-  font-size:18px;
-}
-
-.noti-count{
-  position:absolute;
-  top:-8px;
-  right:-10px;
-  background:#ef4444;
-  color:#fff;
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  font-size:11px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
 /* Reminder */
 .reminder-box{
   background:#fff7e6;
@@ -285,7 +218,7 @@ body{
   margin-bottom:12px;
 }
 
-.btn-pdf{
+.btn-excel{
   border:none;
   background:linear-gradient(135deg, #0F2F4A, #5E7B93);
   color:#fff;
@@ -299,7 +232,7 @@ body{
   font-family:inherit;
 }
 
-.btn-pdf:hover{
+.btn-excel:hover{
   transform:translateY(-1px);
   box-shadow:0 10px 18px rgba(15,47,74,0.22);
 }
@@ -345,11 +278,6 @@ tbody tr:nth-child(even){
   font-weight:800;
   cursor:pointer;
   font-family:inherit;
-}
-
-.btn-remind{
-  background:#eef3f7;
-  color:#0F2F4A;
 }
 
 .btn-done{
@@ -424,39 +352,4 @@ tbody tr:nth-child(even){
     align-items:flex-start;
     gap:10px;
   }
-}
-.stat-card{
-  cursor:pointer;
-}
-
-.stat-card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 8px 18px rgba(0,0,0,0.08);
-}
-/* 🔥 زر تصدير Excel */
-.btn-excel{
-  border:none;
-  background:linear-gradient(to left, #15803d, #16a34a); /* أخضر متدرّج */
-  color:#fff;
-  padding:8px 16px;
-  border-radius:10px;
-  font-weight:900;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-size:14px;
-  box-shadow:0 3px 8px rgba(0,0,0,0.12);
-  transition:.2s;
-}
-
-.btn-excel:hover{
-  background:linear-gradient(to left, #166534, #15803d);
-  transform:translateY(-1px);
-}
-
-/* أيقونة بسيطة داخل الزر (اختياري) */
-.btn-excel::before{
-  content:"📊";
-  font-size:16px;
 }
