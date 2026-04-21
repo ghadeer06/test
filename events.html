@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>الفعاليات - محطة الدعم</title>
-  <link rel="stylesheet" href="events.css"/>
+  <link rel="stylesheet" href="analytics.css" />
+  <link rel="stylesheet" href="events.css" />
 </head>
 
 <body>
@@ -40,7 +41,9 @@
 
     <section class="events-section-box">
       <div class="top-actions">
-        <h2 class="panel-title no-margin">قائمة الفعاليات</h2>
+        <div>
+          <h2 class="panel-title no-margin">قائمة الفعاليات</h2>
+        </div>
         <a href="add_event.html" class="add-event-btn">إضافة فعالية</a>
       </div>
 
@@ -61,12 +64,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", async function () {
-
-  // 🔥 متغير جديد بدون تعارض
-  const supabaseClient = window.supabase.createClient(
+  const supabase = window.supabase.createClient(
     "https://mcxdjisoyqdnyieboqpy.supabase.co",
     "sb_publishable_CoPFxO5-flUjMYi-jOdikw_kwAaUoZr"
   );
@@ -77,8 +77,10 @@ document.addEventListener("DOMContentLoaded", async function () {
   function formatArabicDate(dateString) {
     const date = new Date(dateString);
     if (isNaN(date)) return dateString;
-    return `${date.getDate().toString().padStart(2, "0")} / ${(date.getMonth()+1)
-      .toString().padStart(2,"0")} / ${date.getFullYear()}`;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day} / ${month} / ${year}`;
   }
 
   function createEventCard(event) {
@@ -95,11 +97,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     `;
   }
 
-  // 🔥 حذف فعالية
   window.deleteEvent = async function (id) {
     if (!confirm("هل أنت متأكد من حذف الفعالية؟")) return;
 
-    const { error } = await supabaseClient.from("events").delete().eq("id", id);
+    const { error } = await supabase.from("events").delete().eq("id", id);
 
     if (error) {
       alert("فشل حذف الفعالية");
@@ -110,12 +111,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     location.reload();
   };
 
-  // 🔥 تحميل الفعاليات
   try {
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabase
       .from("events")
       .select("*")
       .order("created_at", { ascending: false });
+
+    console.log("EVENTS DATA:", data);
+    console.log("EVENTS ERROR:", error);
 
     if (error) {
       currentContainer.innerHTML = `<div class="empty-box">خطأ في تحميل الفعاليات</div>`;
@@ -145,6 +148,14 @@ document.addEventListener("DOMContentLoaded", async function () {
         pastContainer.innerHTML += card;
       }
     });
+
+    if (currentContainer.innerHTML.trim() === "") {
+      currentContainer.innerHTML = `<div class="empty-box">لا توجد فعاليات جديدة</div>`;
+    }
+
+    if (pastContainer.innerHTML.trim() === "") {
+      pastContainer.innerHTML = `<div class="empty-box">لا توجد فعاليات سابقة</div>`;
+    }
 
   } catch (err) {
     console.log("CATCH ERROR:", err);
