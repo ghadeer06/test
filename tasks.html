@@ -32,28 +32,12 @@
       <li><a href="admin.html">الصفحة الرئيسية</a></li>
       <li><a href="reports.html">البلاغات</a></li>
       <li class="active"><a href="tasks.html">مهام السلامة</a></li>
-      <li><a href="analytics.html">التقارير</a></li>
       <li><a href="notifications.html">الإشعارات</a></li>
       <li><a href="events.html">الفعاليات</a></li>
     </ul>
   </aside>
 
-  <main class="admin-main">
-
-    <div class="top-user-bar">
-      <div class="user-box">
-        <div class="avatar">س</div>
-        <div class="user-info">
-          <div class="user-name">أ. سارة أحمد</div>
-          <div class="user-role">مسؤولة السلامة</div>
-        </div>
-        <div class="notifications">
-          <span class="noti-count" id="reminderCount">0</span>
-          🔔
-        </div>
-      </div>
-    </div>
-
+ 
     <div id="globalReminder" class="reminder-box" style="display:none;"></div>
 
     <div class="admin-cards">
@@ -90,7 +74,7 @@
           <h2 class="panel-title">قائمة مهام السلامة</h2>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn-pdf" onclick="setFilter('all')">عرض الكل</button>
-            <button class="btn-pdf" onclick="window.print()">تصدير PDF</button>
+<button class="btn-excel" onclick="exportReportsExcel()">تصدير Excel</button>
           </div>
         </div>
 
@@ -385,6 +369,46 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTasks();
   setInterval(loadTasks, 60000);
 });
+  async function exportReportsExcel() {
+    console.log("Export started..."); // للتأكد أنه يشتغل
+
+    const supabase = getClient();
+
+    const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .order("id", { ascending: false });
+
+    if (error) {
+        console.error(error);
+        alert("خطأ في الاتصال بقاعدة البيانات");
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        alert("لا توجد بيانات للتصدير");
+        return;
+    }
+
+    let csv = "ID,النوع,الوصف,الموقع,المرسل,الإيميل,الدور,الحالة\n";
+
+    data.forEach(r => {
+        csv += `${r.id || "-"},${r.type || "-"},${r.description || "-"},${r.location || "-"},${r.sender_name || "-"},${r.sender_email || "-"},${r.sender_role || "-"},${normalizeStatus(r.status)}\n`;
+    });
+
+    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+
+    let link = document.createElement("a");
+    link.href = url;
+    link.download = "reports.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log("Export finished!");
+}
+
 </script>
 
 </body>
