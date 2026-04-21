@@ -75,7 +75,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const supabase = window.supabase.createClient(
@@ -134,7 +133,18 @@ document.addEventListener("DOMContentLoaded", function () {
       saveBtn.disabled = true;
       saveBtn.textContent = "جاري الحفظ...";
 
-      const imageBase64 = await fileToBase64(file);
+      let imageBase64 = "";
+
+      if (file) {
+        if (file.size > 800 * 1024) {
+          alert("الصورة كبيرة، اختاري صورة أصغر من 800KB");
+          saveBtn.disabled = false;
+          saveBtn.textContent = "حفظ الفعالية";
+          return;
+        }
+
+        imageBase64 = await fileToBase64(file);
+      }
 
       const { error } = await supabase
         .from("events")
