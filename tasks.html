@@ -69,11 +69,11 @@
 
       <section class="table-panel">
         <div class="table-header">
-          <h2 class="panel-title" id="tableTitle">قائمة مهام السلامة</h2>
+          <h2 class="panel-title" id="tableTitle">قائمة المهام</h2>
           <button class="btn-excel" onclick="exportExcel()">تصدير Excel</button>
         </div>
 
-        <table id="tasksTable">
+        <table>
           <thead>
             <tr>
               <th>الإجراء</th>
@@ -190,24 +190,39 @@ document.addEventListener("DOMContentLoaded", function () {
     return dateString;
   }
 
-  function getDueLabel(task) {
+  function getDueText(task) {
+    if (task.status === "تم التنفيذ") {
+      return formatDate(task.due_date);
+    }
+
     const diff = daysBetween(task.due_date);
 
-    if (task.status === "تم التنفيذ") {
+    if (task.type === "سبتمبر/أكتوبر") {
+      return "موعدها في سبتمبر";
+    }
+
+    if (task.type === "الأسبوع الأخير") {
       return formatDate(task.due_date);
     }
 
     if (diff < 0) return `متأخرة (${formatDate(task.due_date)})`;
     if (diff === 0) return "موعدها اليوم";
     if (diff === 1) return "موعدها غدًا";
-    if (diff >= 6 && diff <= 8) return "موعدها الأسبوع القادم";
-    if (task.type === "شهري" && diff >= 27 && diff <= 31) return "موعدها الشهر القادم";
-    if (task.type === "سبتمبر/أكتوبر") return "موعدها في سبتمبر";
+
+    if (task.type === "أسبوعي") {
+      if (diff >= 6 && diff <= 8) return "موعدها الأسبوع القادم";
+      if (diff > 8) return `بعد ${Math.ceil(diff / 7)} أسابيع`;
+    }
+
+    if (task.type === "شهري") {
+      if (diff >= 27 && diff <= 31) return "موعدها الشهر القادم";
+      if (diff > 31) return `بعد ${Math.ceil(diff / 30)} أشهر`;
+    }
 
     return formatDate(task.due_date);
   }
 
-  function getTaskStatus(task) {
+  function getStatusInfo(task) {
     if (task.status === "تم التنفيذ") {
       return { text: "تم التنفيذ", className: "status-done" };
     }
@@ -221,7 +236,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (diff < 0) return { text: "متأخرة", className: "status-soon" };
     if (diff === 0) return { text: "موعدها اليوم", className: "status-soon" };
     if (diff === 1) return { text: "موعدها غدًا", className: "status-soon" };
-    if (diff <= 3) return { text: "قريبة", className: "status-soon" };
+
+    if (task.type === "أسبوعي" && diff >= 6 && diff <= 8) {
+      return { text: "الأسبوع القادم", className: "status-pending" };
+    }
+
+    if (task.type === "شهري" && diff >= 27 && diff <= 31) {
+      return { text: "الشهر القادم", className: "status-pending" };
+    }
+
+    if (task.type === "سبتمبر/أكتوبر") {
+      return { text: "سبتمبر/أكتوبر", className: "status-pending" };
+    }
 
     return { text: "قيد التنفيذ", className: "status-pending" };
   }
@@ -245,7 +271,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function getSoonTasks(tasks) {
     return tasks.filter(task => {
       if (task.status === "تم التنفيذ") return false;
-      return daysBetween(task.due_date) <= 3;
+      const diff = daysBetween(task.due_date);
+      return diff <= 3;
     });
   }
 
@@ -322,7 +349,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const filteredTasks = getFilteredTasks(tasks);
 
-    if (!filteredTasks || filteredTasks.length === 0) {
+    if (!filteredTasks.length) {
       tbody.innerHTML = `
         <tr>
           <td colspan="5" class="empty-text">لا توجد مهام في هذا التصنيف</td>
@@ -332,28 +359,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     filteredTasks.forEach(task => {
-      const status = getTaskStatus(task);
+      const status = getStatusInfo(task);
 
       let actions = "";
-
       if (task.status !== "تم التنفيذ") {
-        actions += `
-          <button class="btn-small btn-process" onclick="setProcessing(${task.id})">
-            يتم المعالجة
-          </button>
-        `;
-        actions += `
-          <button class="btn-small btn-done" onclick="completeTask(${task.id}, '${String(task.type).replace(/'/g, "\\'")}', '${task.due_date}', '${String(task.title).replace(/'/g, "\\'")}')">
-            تم التنفيذ
-          </button>
+        actions = `
+          <div class="task-actions">
+            <button class="btn-small btn-process" data-id="${task.id}" onclick="setProcessing(this.dataset.id)">يتم المعالجة</button>
+            <button class="btn-small btn-done"
+              data-id="${task.id}"
+              data-type="${task.type}"
+              data-date="${task.due_date}"
+              data-title="${task.title}"
+              onclick="completeTask(this.dataset.id, this.dataset.type, this.dataset.date, this.dataset.title)">
+              تم التنفيذ
+            </button>
+          </div>
         `;
       }
 
       tbody.innerHTML += `
         <tr>
-          <td><div class="task-actions">${actions}</div></td>
+          <td>${actions}</td>
           <td><span class="status-tag ${status.className}">${status.text}</span></td>
-          <td>${getDueLabel(task)}</td>
+          <td>${getDueText(task)}</td>
           <td>${task.type}</td>
           <td>${task.title}</td>
         </tr>
@@ -379,7 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const { error } = await supabase
       .from("tasks")
       .update({ status: "يتم المعالجة" })
-      .eq("id", id);
+      .eq("id", Number(id));
 
     if (error) {
       document.getElementById("alertsList").innerHTML = `
@@ -395,13 +424,15 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   window.completeTask = async function(id, type, dueDate, title) {
+    const numericId = Number(id);
+
     const { error: updateError } = await supabase
       .from("tasks")
       .update({
         status: "تم التنفيذ",
         completed_at: new Date().toISOString()
       })
-      .eq("id", id);
+      .eq("id", numericId);
 
     if (updateError) {
       document.getElementById("alertsList").innerHTML = `
@@ -442,11 +473,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const exportTasks = getFilteredTasks(currentTasks);
 
     exportTasks.forEach(task => {
-      const status = getTaskStatus(task);
+      const status = getStatusInfo(task);
       rows.push([
         task.title || "",
         task.type || "",
-        getDueLabel(task),
+        getDueText(task),
         status.text
       ]);
     });
@@ -490,7 +521,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     currentTasks = data || [];
-
     renderStats(currentTasks);
     renderGlobalReminder(currentTasks);
     renderAlerts(currentTasks);
