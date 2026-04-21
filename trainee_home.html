@@ -72,6 +72,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+
 document.addEventListener("DOMContentLoaded", async function () {
 
   const supabase = window.supabase.createClient(
@@ -80,56 +81,83 @@ document.addEventListener("DOMContentLoaded", async function () {
   );
 
   // تحميل آخر فعاليتين
-  async function loadLatestEvents() {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(2);
+ async function loadLatestEvents() {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(3);
 
-    const box = document.getElementById("latestEvents");
-    box.innerHTML = "";
+  const box = document.getElementById("latestEvents");
+  box.innerHTML = "";
 
-    if (!data || data.length === 0) {
-      box.innerHTML = "<p>لا توجد فعاليات حالياً</p>";
-      return;
-    }
-
-    data.forEach(event => {
-      box.innerHTML += `
-        <div class="home-item">
-          <strong>${event.title}</strong>
-          <span>${event.due_date}</span>
-        </div>
-      `;
-    });
+  if (!data || data.length === 0) {
+    box.innerHTML = "<p>لا توجد فعاليات حالياً</p>";
+    return;
   }
+
+  data.forEach(event => {
+    box.innerHTML += `
+      <div class="home-item" 
+           style="display:flex; gap:15px; padding:15px; border-radius:12px; background:#fff; margin-bottom:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+
+        <img src="${event.image_url || 'img/default.png'}"
+             style="width:80px; height:80px; border-radius:10px; object-fit:cover;">
+
+        <div style="flex:1;">
+          <h3 style="margin:0; font-size:18px;">${event.title}</h3>
+          <p style="margin:5px 0; color:#555;">${event.description || "لا يوجد وصف"}</p>
+          <span style="font-size:14px; color:#888;">📅 ${event.due_date || "بدون تاريخ"}</span>
+        </div>
+
+      </div>
+    `;
+  });
+}
+
+
 
   // تحميل آخر بلاغين للمتدرب
-  async function loadLatestReports() {
-    const { data, error } = await supabase
-      .from("reports")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(2);
+ async function loadLatestReports() {
+  const { data, error } = await supabase
+    .from("reports")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(3);
 
-    const box = document.getElementById("latestReports");
-    box.innerHTML = "";
+  const box = document.getElementById("latestReports");
+  box.innerHTML = "";
 
-    if (!data || data.length === 0) {
-      box.innerHTML = "<p>لا توجد بلاغات حالياً</p>";
-      return;
-    }
-
-    data.forEach(report => {
-      box.innerHTML += `
-        <div class="home-item">
-          <strong>${report.title || "بلاغ"}</strong>
-          <span>${report.created_at.split("T")[0]}</span>
-        </div>
-      `;
-    });
+  if (!data || data.length === 0) {
+    box.innerHTML = "<p>لا توجد بلاغات حالياً</p>";
+    return;
   }
+
+  data.forEach(report => {
+    box.innerHTML += `
+      <div class="home-item"
+           style="padding:15px; border-radius:12px; background:#fff; margin-bottom:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+
+        <h3 style="margin:0; font-size:18px;">${report.type}</h3>
+
+        <p style="margin:5px 0; color:#555;">
+          ${report.description || "لا يوجد وصف"}
+        </p>
+
+        <p style="margin:0; font-size:14px; color:#888;">
+          📅 ${report.created_at.split("T")[0]}
+        </p>
+
+        <p style="margin:0; font-size:14px; color:#888;">
+          🟢 الحالة: <strong>${report.status || "غير محدد"}</strong>
+        </p>
+
+      </div>
+    `;
+  });
+}
+
+
 
   loadLatestEvents();
   loadLatestReports();
@@ -139,7 +167,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     <div class="footer-content">
       <p>&copy; 2026 حقوق محفوظة | محطة الدعم</p>
       <ul class="footer-links">
-        <li><a href="student_home.html">الرئيسية</a></li>
+        <li><a href="index.html">الرئيسية</a></li>
         <li><a href="about.html">عن الموقع</a></li>
       </ul>
     </div>
