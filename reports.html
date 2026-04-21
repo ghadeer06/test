@@ -92,6 +92,7 @@ if (email !== ADMIN_EMAIL) {
 </footer>
 
 <script>
+
 function getClient() {
   return window.supabase.createClient(
     'https://mcxdjisoyqdnyieboqpy.supabase.co',
@@ -235,21 +236,41 @@ async function loadReports() {
 }
 
 loadReports();
-  
-function exportToExcel() {
-    let table = document.querySelector("table");
-    let html = table.outerHTML.replace(/ /g, '%20');
 
-    let fileName = "reports.xlsx";
-    let downloadLink = document.createElement("a");
 
-    downloadLink.href = 'data:application/vnd.ms-excel,' + html;
-    downloadLink.download = fileName;
-    downloadLink.click();
+/* ================================
+   🔥 تصدير البلاغات إلى Excel
+================================ */
+async function exportReportsExcel() {
+    const supabase = getClient();
+
+    const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .order("id", { ascending: false });
+
+    if (error || !data) {
+        alert("حدث خطأ أثناء التصدير");
+        return;
+    }
+
+    let csv = "ID,النوع,الوصف,الموقع,المرسل,الإيميل,الدور,الحالة\n";
+
+    data.forEach(r => {
+        csv += `${r.id || "-"},${r.type || "-"},${r.description || "-"},${r.location || "-"},${r.sender_name || "-"},${r.sender_email || "-"},${r.sender_role || "-"},${normalizeStatus(r.status)}\n`;
+    });
+
+    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+
+    let link = document.createElement("a");
+    link.href = url;
+    link.download = "reports.csv";
+    link.click();
 }
 
-
 </script>
+
 
 </body>
 </html>
