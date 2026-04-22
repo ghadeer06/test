@@ -11,7 +11,7 @@
 
   <header class="admin-header">
     <div class="admin-left">
-      <img src="img/logo.png" class="admin-logo" alt="Logo" />
+      <img src="img/logo.png" class="admin-logo" alt="Logo">
       <div class="admin-title">
         <h1>مهام السلامة</h1>
         <span>متابعة المهام اليومية والأسبوعية والشهرية الخاصة بالصحة والسلامة المهنية</span>
@@ -21,7 +21,6 @@
   </header>
 
   <div class="dashboard-layout">
-
     <aside class="sidebar">
       <div class="sidebar-brand">
         <h2>محطة الدعم</h2>
@@ -38,23 +37,22 @@
     </aside>
 
     <main class="admin-main">
-
       <div id="globalReminder" class="reminder-box" style="display:none;"></div>
 
       <div class="admin-cards">
-        <div class="stat-card filter-card active-card" id="allCard" onclick="setFilter('all')">
+        <div class="stat-card filter-card active-card" id="allCard" data-filter="all">
           <h3>المهام</h3>
           <p id="allCount">0</p>
           <span>كل المهام الحالية</span>
         </div>
 
-        <div class="stat-card filter-card" id="processingCard" onclick="setFilter('processing')">
+        <div class="stat-card filter-card" id="processingCard" data-filter="processing">
           <h3>يتم المعالجة</h3>
           <p id="processingCount">0</p>
           <span>قيد العمل الآن</span>
         </div>
 
-        <div class="stat-card filter-card" id="doneCard" onclick="setFilter('done')">
+        <div class="stat-card filter-card" id="doneCard" data-filter="done">
           <h3>المنفذة</h3>
           <p id="doneCount">0</p>
           <span>آخر 7 أيام</span>
@@ -62,7 +60,6 @@
       </div>
 
       <div class="reports-layout">
-
         <section class="alerts-panel">
           <h2 class="panel-title">تنبيهات المهام</h2>
           <div id="alertsList">
@@ -73,7 +70,7 @@
         <section class="table-panel">
           <div class="table-header">
             <h2 class="panel-title" id="tableTitle">قائمة المهام</h2>
-            <button class="btn-excel" onclick="exportExcel()">تصدير Excel</button>
+            <button class="btn-excel" id="exportBtn">تصدير Excel</button>
           </div>
 
           <table id="tasksTable">
@@ -93,7 +90,6 @@
             </tbody>
           </table>
         </section>
-
       </div>
     </main>
   </div>
@@ -105,9 +101,8 @@
   </footer>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", () => {
       const role = localStorage.getItem("user_role");
-
       if (role && role !== "admin") {
         alert("هذه الصفحة خاصة بالمسؤول فقط");
         window.location.href = "login.html";
@@ -119,11 +114,17 @@
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jeGRqaXNveXFkbnlpZWJvcXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDI3NDAsImV4cCI6MjA5MDk3ODc0MH0.kIwJ1pc-GLX1lTvstLSDZ5Li1rd9vwutI4-Wz_HR6nE"
       );
 
+      const tasksTableBody = document.getElementById("tasksTableBody");
+      const alertsList = document.getElementById("alertsList");
+      const globalReminder = document.getElementById("globalReminder");
+      const tableTitle = document.getElementById("tableTitle");
+      const exportBtn = document.getElementById("exportBtn");
+
       let currentTasks = [];
       let currentFilter = "all";
 
       function parseDateOnly(dateString) {
-        const [y, m, d] = dateString.split("-").map(Number);
+        const [y, m, d] = String(dateString).split("-").map(Number);
         return new Date(y, m - 1, d);
       }
 
@@ -136,29 +137,29 @@
 
       function formatDate(dateString) {
         if (!dateString) return "-";
-        const [y, m, d] = dateString.split("-");
+        const [y, m, d] = String(dateString).split("-");
         return `${d}/${m}/${y}`;
+      }
+
+      function todayStart() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
       }
 
       function daysBetween(dateString) {
         if (!dateString) return 9999;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
+        const today = todayStart();
         const target = parseDateOnly(dateString);
         target.setHours(0, 0, 0, 0);
-
-        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        return Math.ceil((target - today) / 86400000);
       }
 
       function daysSince(dateString) {
         if (!dateString) return null;
-
         const now = new Date();
         const past = new Date(dateString);
-
-        return Math.floor((now - past) / (1000 * 60 * 60 * 24));
+        return Math.floor((now - past) / 86400000);
       }
 
       function nextDate(dateString, type) {
@@ -194,6 +195,34 @@
         return dateString;
       }
 
+      function isDoneVisible(task) {
+        if (task.status !== "تم التنفيذ") return false;
+        const elapsed = daysSince(task.completed_at);
+        return elapsed !== null && elapsed < 7;
+      }
+
+      function getActiveTasks(tasks) {
+        return tasks.filter(task => task.status !== "تم التنفيذ");
+      }
+
+      function getProcessingTasks(tasks) {
+        return tasks.filter(task => task.status === "يتم المعالجة");
+      }
+
+      function getDoneTasks(tasks) {
+        return tasks.filter(isDoneVisible);
+      }
+
+      function getSoonTasks(tasks) {
+        return tasks.filter(task => task.status !== "تم التنفيذ" && daysBetween(task.due_date) <= 3);
+      }
+
+      function getFilteredTasks(tasks) {
+        if (currentFilter === "processing") return getProcessingTasks(tasks);
+        if (currentFilter === "done") return getDoneTasks(tasks);
+        return getActiveTasks(tasks);
+      }
+
       function getDueText(task) {
         if (task.status === "تم التنفيذ") {
           return formatDate(task.due_date);
@@ -206,6 +235,9 @@
         }
 
         if (task.type === "الأسبوع الأخير") {
+          if (diff === 0) return "موعدها اليوم";
+          if (diff === 1) return "موعدها غدًا";
+          if (diff > 1 && diff <= 7) return `بعد ${diff} أيام`;
           return formatDate(task.due_date);
         }
 
@@ -222,6 +254,8 @@
           if (diff >= 27 && diff <= 31) return "موعدها الشهر القادم";
           if (diff > 31) return `بعد ${Math.ceil(diff / 30)} أشهر`;
         }
+
+        if (diff > 1 && diff <= 6) return `بعد ${diff} أيام`;
 
         return formatDate(task.due_date);
       }
@@ -253,36 +287,11 @@
           return { text: "سبتمبر/أكتوبر", className: "status-pending" };
         }
 
+        if (diff > 1 && diff <= 6) {
+          return { text: `بعد ${diff} أيام`, className: "status-pending" };
+        }
+
         return { text: "قيد التنفيذ", className: "status-pending" };
-      }
-
-      function getDoneTasks(tasks) {
-        return tasks.filter(task => {
-          if (task.status !== "تم التنفيذ") return false;
-          const elapsed = daysSince(task.completed_at);
-          return elapsed !== null && elapsed < 7;
-        });
-      }
-
-      function getProcessingTasks(tasks) {
-        return tasks.filter(task => task.status === "يتم المعالجة");
-      }
-
-      function getActiveTasks(tasks) {
-        return tasks.filter(task => task.status !== "تم التنفيذ");
-      }
-
-      function getSoonTasks(tasks) {
-        return tasks.filter(task => {
-          if (task.status === "تم التنفيذ") return false;
-          return daysBetween(task.due_date) <= 3;
-        });
-      }
-
-      function getFilteredTasks(tasks) {
-        if (currentFilter === "done") return getDoneTasks(tasks);
-        if (currentFilter === "processing") return getProcessingTasks(tasks);
-        return getActiveTasks(tasks);
       }
 
       function renderStats(tasks) {
@@ -292,25 +301,20 @@
       }
 
       function renderGlobalReminder(tasks) {
-        const box = document.getElementById("globalReminder");
         const soonTasks = getSoonTasks(tasks);
-
         if (soonTasks.length === 0) {
-          box.style.display = "none";
+          globalReminder.style.display = "none";
           return;
         }
-
-        box.style.display = "block";
-        box.textContent = `يوجد ${soonTasks.length} مهمة تحتاج تذكير أو متابعة قريبة`;
+        globalReminder.style.display = "block";
+        globalReminder.textContent = `يوجد ${soonTasks.length} مهمة تحتاج تذكير أو متابعة قريبة`;
       }
 
       function renderAlerts(tasks) {
-        const alertsList = document.getElementById("alertsList");
+        const soonTasks = getSoonTasks(tasks);
         alertsList.innerHTML = "";
 
-        const soonTasks = getSoonTasks(tasks);
-
-        if (soonTasks.length === 0) {
+        if (!soonTasks.length) {
           alertsList.innerHTML = `
             <div class="alert-item">
               <strong>ملاحظة:</strong> لا توجد تنبيهات حالياً.
@@ -323,15 +327,10 @@
           const diff = daysBetween(task.due_date);
           let text = "";
 
-          if (diff < 0) {
-            text = `المهمة "${task.title}" متأخرة عن موعدها.`;
-          } else if (diff === 0) {
-            text = `المهمة "${task.title}" موعدها اليوم.`;
-          } else if (diff === 1) {
-            text = `المهمة "${task.title}" موعدها غدًا.`;
-          } else {
-            text = `تبقى ${diff} أيام على المهمة "${task.title}".`;
-          }
+          if (diff < 0) text = `المهمة "${task.title}" متأخرة عن موعدها.`;
+          else if (diff === 0) text = `المهمة "${task.title}" موعدها اليوم.`;
+          else if (diff === 1) text = `المهمة "${task.title}" موعدها غدًا.`;
+          else text = `تبقى ${diff} أيام على المهمة "${task.title}".`;
 
           alertsList.innerHTML += `
             <div class="alert-item">
@@ -342,18 +341,15 @@
       }
 
       function renderTable(tasks) {
-        const tbody = document.getElementById("tasksTableBody");
-        const tableTitle = document.getElementById("tableTitle");
-        tbody.innerHTML = "";
+        const filteredTasks = getFilteredTasks(tasks);
+        tasksTableBody.innerHTML = "";
 
         if (currentFilter === "all") tableTitle.textContent = "قائمة المهام";
         if (currentFilter === "processing") tableTitle.textContent = "المهام التي يتم معالجتها";
         if (currentFilter === "done") tableTitle.textContent = "المهام المنفذة";
 
-        const filteredTasks = getFilteredTasks(tasks);
-
         if (!filteredTasks.length) {
-          tbody.innerHTML = `
+          tasksTableBody.innerHTML = `
             <tr>
               <td colspan="5" class="empty-text">لا توجد مهام في هذا التصنيف</td>
             </tr>
@@ -363,27 +359,30 @@
 
         filteredTasks.forEach(task => {
           const status = getStatusInfo(task);
+          const canAct = task.status !== "تم التنفيذ";
 
-          let actions = "";
-          if (task.status !== "تم التنفيذ") {
-            actions = `
-              <div class="task-actions">
-                <button class="btn-small btn-process" data-id="${task.id}" onclick="setProcessing(this.dataset.id)">يتم المعالجة</button>
-                <button class="btn-small btn-done"
-                  data-id="${task.id}"
-                  data-type="${task.type}"
-                  data-date="${task.due_date}"
-                  data-title="${task.title}"
-                  onclick="completeTask(this.dataset.id, this.dataset.type, this.dataset.date, this.dataset.title)">
-                  تم التنفيذ
-                </button>
-              </div>
-            `;
-          }
-
-          tbody.innerHTML += `
+          tasksTableBody.innerHTML += `
             <tr>
-              <td>${actions}</td>
+              <td>
+                ${canAct ? `
+                  <div class="task-actions">
+                    <button class="btn-small btn-process"
+                      data-action="processing"
+                      data-id="${task.id}">
+                      يتم المعالجة
+                    </button>
+
+                    <button class="btn-small btn-done"
+                      data-action="done"
+                      data-id="${task.id}"
+                      data-type="${encodeURIComponent(task.type)}"
+                      data-date="${task.due_date}"
+                      data-title="${encodeURIComponent(task.title)}">
+                      تم التنفيذ
+                    </button>
+                  </div>
+                ` : ""}
+              </td>
               <td><span class="status-tag ${status.className}">${status.text}</span></td>
               <td>${getDueText(task)}</td>
               <td>${task.type}</td>
@@ -395,28 +394,19 @@
 
       function updateFilterUI() {
         document.querySelectorAll(".filter-card").forEach(card => card.classList.remove("active-card"));
-
         if (currentFilter === "all") document.getElementById("allCard").classList.add("active-card");
         if (currentFilter === "processing") document.getElementById("processingCard").classList.add("active-card");
         if (currentFilter === "done") document.getElementById("doneCard").classList.add("active-card");
       }
 
-      window.setFilter = function(filterName) {
-        currentFilter = filterName;
-        updateFilterUI();
-        renderTable(currentTasks);
-      };
-
-      window.setProcessing = async function(id) {
+      async function setProcessingById(id) {
         const { error } = await supabase
           .from("tasks")
           .update({ status: "يتم المعالجة" })
           .eq("id", Number(id));
 
         if (error) {
-          document.getElementById("alertsList").innerHTML = `
-            <div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>
-          `;
+          alertsList.innerHTML = `<div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>`;
           return;
         }
 
@@ -424,9 +414,9 @@
         currentFilter = "processing";
         updateFilterUI();
         renderTable(currentTasks);
-      };
+      }
 
-      window.completeTask = async function(id, type, dueDate, title) {
+      async function completeTaskById(id, type, dueDate, title) {
         const numericId = Number(id);
 
         const { error: updateError } = await supabase
@@ -438,9 +428,7 @@
           .eq("id", numericId);
 
         if (updateError) {
-          document.getElementById("alertsList").innerHTML = `
-            <div class="alert-item"><strong>خطأ:</strong> ${updateError.message}</div>
-          `;
+          alertsList.innerHTML = `<div class="alert-item"><strong>خطأ:</strong> ${updateError.message}</div>`;
           return;
         }
 
@@ -458,9 +446,7 @@
             }]);
 
           if (insertError) {
-            document.getElementById("alertsList").innerHTML = `
-              <div class="alert-item"><strong>خطأ:</strong> ${insertError.message}</div>
-            `;
+            alertsList.innerHTML = `<div class="alert-item"><strong>خطأ:</strong> ${insertError.message}</div>`;
             return;
           }
         }
@@ -469,9 +455,9 @@
         currentFilter = "done";
         updateFilterUI();
         renderTable(currentTasks);
-      };
+      }
 
-      window.exportExcel = function() {
+      function exportExcel() {
         const rows = [["المهمة","النوع","الموعد","الحالة"]];
         const exportTasks = getFilteredTasks(currentTasks);
 
@@ -499,14 +485,11 @@
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-      };
+      }
 
       async function loadTasks() {
-        const alertsList = document.getElementById("alertsList");
-        const tbody = document.getElementById("tasksTableBody");
-
         alertsList.innerHTML = `<div class="alert-item"><strong>جاري التحميل...</strong></div>`;
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-text">جاري تحميل البيانات...</td></tr>`;
+        tasksTableBody.innerHTML = `<tr><td colspan="5" class="empty-text">جاري تحميل البيانات...</td></tr>`;
 
         const { data, error } = await supabase
           .from("tasks")
@@ -514,12 +497,8 @@
           .order("id", { ascending: false });
 
         if (error) {
-          alertsList.innerHTML = `
-            <div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>
-          `;
-          tbody.innerHTML = `
-            <tr><td colspan="5" class="empty-text">فشل تحميل البيانات</td></tr>
-          `;
+          alertsList.innerHTML = `<div class="alert-item"><strong>خطأ:</strong> ${error.message}</div>`;
+          tasksTableBody.innerHTML = `<tr><td colspan="5" class="empty-text">فشل تحميل البيانات</td></tr>`;
           return;
         }
 
@@ -530,6 +509,36 @@
         updateFilterUI();
         renderTable(currentTasks);
       }
+
+      document.querySelectorAll(".filter-card").forEach(card => {
+        card.addEventListener("click", () => {
+          currentFilter = card.dataset.filter;
+          updateFilterUI();
+          renderTable(currentTasks);
+        });
+      });
+
+      tasksTableBody.addEventListener("click", async (e) => {
+        const btn = e.target.closest("button");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+
+        if (action === "processing") {
+          await setProcessingById(id);
+          return;
+        }
+
+        if (action === "done") {
+          const type = decodeURIComponent(btn.dataset.type);
+          const dueDate = btn.dataset.date;
+          const title = decodeURIComponent(btn.dataset.title);
+          await completeTaskById(id, type, dueDate, title);
+        }
+      });
+
+      exportBtn.addEventListener("click", exportExcel);
 
       loadTasks();
     });
